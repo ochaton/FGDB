@@ -129,11 +129,3 @@ int server_inet_init (struct ev_server * server, uint16_t port, int max_queue) {
 
 	return 0;
 }
-
-
-
-
-
-
-
-

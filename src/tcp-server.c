@@ -52,8 +52,7 @@ static void not_blocked (EV_P_ ev_periodic *w, int revents) {
 	fprintf(stderr, "Not_blocked!\n");
 }
 
-int main (int argc, char const *argv[])
-{
+int main (int argc, char const *argv[]) {
 	enum socket_type type = INET;
 	server.type = type;
 
@@ -64,12 +63,12 @@ int main (int argc, char const *argv[])
 	EV_P  = ev_default_loop(0);
 
 	ev_periodic_init(&every_few_seconds, not_blocked, 0, 5, 0);
-    ev_periodic_start(EV_A_ &every_few_seconds);
+	ev_periodic_start(EV_A_ &every_few_seconds);
 
-    ev_io_init(&server.io, accept_cb, server.fd, EV_READ);
-    ev_io_start(EV_A_ &server.io);
+	ev_io_init(&server.io, accept_cb, server.fd, EV_READ);
+	ev_io_start(EV_A_ &server.io);
 
-    fprintf(stderr, "tcp-socket starting...\n");
+	fprintf(stderr, "tcp-socket starting...\n");
 	ev_loop(EV_A_ 0);
 
 	// This point is only ever reached if the loop is manually exited
