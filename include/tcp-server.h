@@ -20,4 +20,8 @@ struct ev_server {
 
 typedef struct ev_server ev_server;
 
+ev_server server_init(char * ip_addr, uint16_t port, enum socket_type sock_type);
+void server_listen (struct ev_loop *loop, ev_server * server);
+void server_close (ev_server * server);
+
 #endif

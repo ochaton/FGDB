@@ -19,14 +19,11 @@
 #include "tcp-server.h" // ev_server
 #include "staff.h"
 
-
-ev_server server;
-
 static void accept_cb (EV_P_ ev_io *w, int revents) {
 	puts("unix stream socket has become readable\n");
 
 	// since ev_io is the first member,
-	// watcher `w` has the address of the 
+	// watcher `w` has the address of the
 	// start of the ev_server struct
 	// AND THAT IS FUCKING GENIOUS!!!
 	struct ev_server * server_ = (struct ev_server *) w;
@@ -47,31 +44,23 @@ static void accept_cb (EV_P_ ev_io *w, int revents) {
 	}
 }
 
+ev_server server_init(char * ip_addr, uint16_t port, enum socket_type sock_type) {
 
-static void not_blocked (EV_P_ ev_periodic *w, int revents) {
-	fprintf(stderr, "Not_blocked!\n");
+	ev_server new_server;
+	new_server.type = sock_type;
+
+	server_inet_init(&new_server, ip_addr, port, 10);
+	ev_io_init(&new_server.io, accept_cb, new_server.fd, EV_READ);
+
+	return new_server;
 }
 
-int main (int argc, char const *argv[]) {
-	enum socket_type type = INET;
-	server.type = type;
+void server_listen (struct ev_loop *loop, ev_server * server) {
+	ev_io_start(loop, &server->io);
+	return;
+}
 
-	server_inet_init(&server, 2016, 10);
-	fprintf(stderr, "Server inited!\n");
-
-	struct ev_periodic every_few_seconds;
-	EV_P  = ev_default_loop(0);
-
-	ev_periodic_init(&every_few_seconds, not_blocked, 0, 5, 0);
-	ev_periodic_start(EV_A_ &every_few_seconds);
-
-	ev_io_init(&server.io, accept_cb, server.fd, EV_READ);
-	ev_io_start(EV_A_ &server.io);
-
-	fprintf(stderr, "tcp-socket starting...\n");
-	ev_loop(EV_A_ 0);
-
-	// This point is only ever reached if the loop is manually exited
-	close(server.fd);
-	return EXIT_SUCCESS;
+void server_close (ev_server * server) {
+	close(server->fd);
+	return;
 }

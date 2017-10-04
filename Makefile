@@ -1,9 +1,9 @@
 CC = cc -std=c11
-CFLAGS += -Wall -Wformat-security -Wignored-qualifiers -Winit-self \
+CFLAGS += -Wignored-qualifiers -Winit-self \
 		-Wswitch-default -Wfloat-equal -Wshadow -Wpointer-arith \
 		-Wtype-limits -Wempty-body \
 		-Wmissing-field-initializers -Wextra \
-		-Wno-pointer-to-int-cast -Wno-int-conversion  \
+		-Wno-pointer-to-int-cast -D_BSD_SOURCE
 
 TARGET = tcp-ev-server
 # Directories with source code

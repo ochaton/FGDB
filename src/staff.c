@@ -21,8 +21,8 @@ static inline int setnonblock (int fd);
 static inline int reuse_addr(int fd);
 int unix_socket_init (struct sockaddr_un* socket_un, char* sock_path);
 int server_unix_init (struct ev_server * server, char * sock_path, int max_queue);
-int inet_socket_init (struct sockaddr_in * socket_in, uint16_t port);
-int server_inet_init (struct ev_server * server, uint16_t port, int max_queue);
+int inet_socket_init (struct sockaddr_in * socket_in, char * ip_addr_str, uint16_t port);
+int server_inet_init (struct ev_server * server, char * ip_addr_str, uint16_t port, int max_queue);
 
 
 static inline int setnonblock(int fd) {
@@ -81,7 +81,7 @@ int server_unix_init (struct ev_server * server, char * sock_path, int max_queue
 }
 
 
-int inet_socket_init (struct sockaddr_in * socket_in, uint16_t port) {
+int inet_socket_init (struct sockaddr_in * socket_in, char * ip_addr_str, uint16_t port) {
 
 	// Setup a inet socket listener.
 	int fd = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
@@ -104,7 +104,7 @@ int inet_socket_init (struct sockaddr_in * socket_in, uint16_t port) {
 
 	socket_in->sin_family = AF_INET;
 	socket_in->sin_port = htons(port);
-	if (-1 == inet_aton("0.0.0.0", &socket_in->sin_addr)) {
+	if (-1 == inet_aton((const char *) ip_addr_str, &socket_in->sin_addr)) {
 		perror("Server socket inet_aton: ");
 		exit(EXIT_FAILURE);
 	}
@@ -113,10 +113,10 @@ int inet_socket_init (struct sockaddr_in * socket_in, uint16_t port) {
 }
 
 
-int server_inet_init (struct ev_server * server, uint16_t port, int max_queue) {
+int server_inet_init (struct ev_server * server, char * ip_addr_str, uint16_t port, int max_queue) {
 	assert(server->type == INET);
 
-	server->fd = inet_socket_init(&server->socket_in, port);
+	server->fd = inet_socket_init(&server->socket_in, ip_addr_str, port);
 	if (-1 == bind(server->fd, (struct sockaddr *) &server->socket_in, sizeof server->socket_in)) {
 		perror("Server bind: ");
 		exit(EXIT_FAILURE);
