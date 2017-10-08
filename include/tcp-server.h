@@ -3,6 +3,9 @@
 
 #include <netinet/in.h>
 #include <sys/un.h>
+#include <ev.h>
+
+#include "request.h"
 
 struct ev_server {
 	ev_io io;
@@ -16,6 +19,7 @@ struct ev_server {
 		struct sockaddr_in socket_in;
 		struct sockaddr_un socket_un;
 	};
+	// void (*on_request)(req_t *);
 };
 
 typedef struct ev_server ev_server;

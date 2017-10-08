@@ -1,4 +1,4 @@
-CC = cc -std=c11
+CC = cc -std=c11 -ggdb
 CFLAGS += -Wignored-qualifiers -Winit-self \
 		-Wswitch-default -Wfloat-equal -Wshadow -Wpointer-arith \
 		-Wtype-limits -Wempty-body \
@@ -15,7 +15,7 @@ OBJ_DIR := $(BUILD_DIR)/obj
 BIN_DIR := $(BUILD_DIR)/bin
 
 # Link libraries gcc flag: library will be searched with prefix "lib".
-LDFLAGS = -lev
+LDFLAGS = -lev -lmsgpackc
 
 # Add headers dirs to gcc search path
 CFLAGS += -I $(INCLUDE_DIR)

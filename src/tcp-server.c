@@ -17,6 +17,7 @@
 
 // project-staff:
 #include "tcp-server.h" // ev_server
+#include "request.h"    // client request
 #include "staff.h"
 
 static void accept_cb (EV_P_ ev_io *w, int revents) {
@@ -26,21 +27,17 @@ static void accept_cb (EV_P_ ev_io *w, int revents) {
 	// watcher `w` has the address of the
 	// start of the ev_server struct
 	// AND THAT IS FUCKING GENIOUS!!!
-	struct ev_server * server_ = (struct ev_server *) w;
+	struct ev_server * server = (struct ev_server *) w;
 
-	int client_fd = accept(server_->fd, NULL, NULL);
+	int client_fd = accept(server->fd, NULL, NULL);
 	if (-1 == client_fd) {
 		if (errno != EAGAIN && errno != EWOULDBLOCK) {
 			fprintf(stderr, "accept() failed errno=%i (%s)\n", errno, strerror(errno));
-			exit(EXIT_FAILURE);
+			return;
 		}
 	} else {
-		fprintf(stderr, "accepted a client\n");
-		if (-1 == send(client_fd, "ololo\n", 7, 0)) {
-			fprintf(stderr, "send() failed errno=%i (%s)\n", errno, strerror(errno));
-		}
-		shutdown(client_fd, 2);
-		close(client_fd);
+		fprintf(stderr, "accepted a clientfd = %d\n", client_fd);
+		init_request(client_fd, server);
 	}
 }
 

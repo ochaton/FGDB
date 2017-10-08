@@ -17,15 +17,18 @@
 #include <ev.h>
 #include <tcp-server.h> // struct ev_server
 
-static inline int setnonblock (int fd);
 static inline int reuse_addr(int fd);
 int unix_socket_init (struct sockaddr_un* socket_un, char* sock_path);
 int server_unix_init (struct ev_server * server, char * sock_path, int max_queue);
 int inet_socket_init (struct sockaddr_in * socket_in, char * ip_addr_str, uint16_t port);
 int server_inet_init (struct ev_server * server, char * ip_addr_str, uint16_t port, int max_queue);
 
+int setnonblock (int fd);
+unsigned int staff_random();
 
-static inline int setnonblock(int fd) {
+/* Implementation: */
+
+int setnonblock(int fd) {
 	int flags = fcntl(fd, F_GETFL);
 	flags |= O_NONBLOCK;
 	return fcntl(fd, F_SETFL, flags);
@@ -128,4 +131,21 @@ int server_inet_init (struct ev_server * server, char * ip_addr_str, uint16_t po
 	}
 
 	return 0;
+}
+
+static int rfd = -1;
+
+unsigned int staff_random() {
+	if (rfd == -1) {
+		if (-1 == (rfd = open("/dev/random", O_RDONLY))) {
+			fprintf(stderr, "Openning /dev/random failed: %s\n", strerror(errno));
+			return rand();
+		}
+	}
+
+	unsigned int rv;
+	if (-1 == read(rfd, &rv, sizeof rv)) {
+		rv = rand();
+	}
+	return rv;
 }

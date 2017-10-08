@@ -25,15 +25,15 @@ static void not_blocked (EV_P_ ev_periodic *w, int revents) {
 int main (int argc, char const *argv[]) {
 
 
-	struct ev_periodic every_few_seconds;
+	// struct ev_periodic every_few_seconds;
 	struct ev_loop *loop = ev_default_loop(0);
 
-	ev_periodic_init(&every_few_seconds, not_blocked, 0, 5, 0);
-	ev_periodic_start(loop, &every_few_seconds);
+	// ev_periodic_init(&every_few_seconds, not_blocked, 0, 5, 0);
+	// ev_periodic_start(loop, &every_few_seconds);
 
 	ev_server server = server_init("0.0.0.0", 2016, INET);
-	fprintf(stderr, "Server inited!\n");
-	fprintf(stderr, "tcp-socket starting...\n");
+	// fprintf(stderr, "Server inited!\n");
+	// fprintf(stderr, "tcp-socket starting...\n");
 
 	server_listen(loop, &server);
 
