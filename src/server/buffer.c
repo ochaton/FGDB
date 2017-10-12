@@ -3,6 +3,9 @@
 #include <string.h>
 #include <stdint.h>
 
+#include <stdio.h>
+#include <assert.h>
+
 buf_t * init_buffer(size_t buflen) {
 	buf_t * buf = (buf_t *) malloc(buflen + sizeof(buf_t));
 	if (buf) {
@@ -16,7 +19,9 @@ void destroy_buffer(buf_t * buf) {
 	free(buf);
 }
 
-void push2buffer(buf_t * buf, const char *src, size_t bytes) {
+void buffer_push(buf_t * buf, const char *src, size_t bytes) {
+	if (!src) return;
+	assert(bytes <= buf->free);
 	strncpy(buf->start + buf->used, src, bytes);
 	buf->free -= bytes;
 	buf->used += bytes;

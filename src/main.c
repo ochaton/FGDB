@@ -12,6 +12,9 @@
 #include <unistd.h>
 #include <fcntl.h>
 
+// msgpack configure:
+#define MSGPACK_ZONE_CHUNK_SIZE 8192
+
 // libev:
 #include <ev.h>
 

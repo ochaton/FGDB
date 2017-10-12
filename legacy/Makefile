@@ -1,5 +1,5 @@
-CC = cc -std=c11 -ggdb
-CFLAGS += -Wignored-qualifiers -Winit-self \
+CC = cc -std=c11 -ggdb -O0
+CFLAGS += -Werror -Wignored-qualifiers -Winit-self \
 		-Wswitch-default -Wfloat-equal -Wshadow -Wpointer-arith \
 		-Wtype-limits -Wempty-body \
 		-Wmissing-field-initializers -Wextra \
@@ -13,12 +13,13 @@ INCLUDE_DIR = include
 BUILD_DIR = build
 OBJ_DIR := $(BUILD_DIR)/obj
 BIN_DIR := $(BUILD_DIR)/bin
+BRIDGE_DIR := bridge/
 
 # Link libraries gcc flag: library will be searched with prefix "lib".
 LDFLAGS = -lev -lmsgpackc
 
 # Add headers dirs to gcc search path
-CFLAGS += -I $(INCLUDE_DIR)
+CFLAGS += -I $(INCLUDE_DIR) -L $(BRIDGE_DIR)
 
 # Helper macros
 # subst is sensitive to leading spaces in arguments.

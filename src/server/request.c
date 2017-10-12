@@ -8,12 +8,12 @@
 #include <unistd.h>
 
 #include <msgpack.h>
-
 #include <ev.h>
+
 
 enum { MAX_MESSAGE_SIZE = 10*1<<10 };
 
-void parse_request(EV_P_ ev_io *w, int revents);
+void parse_request(EV_P_  ev_io *w, int revents);
 
 void init_request(int fd, ev_server * server) {
 	req_t * req = (req_t *) malloc(sizeof(req_t));
@@ -30,7 +30,7 @@ void init_request(int fd, ev_server * server) {
 	req->log->debug(req->log, "setnonblock successfull");
 
 	req->server = server;
-	req->state  = READ;
+	req->state  = INIT;
 	req->buf = NULL;
 	req->msg = NULL;
 
@@ -62,36 +62,29 @@ static int parse_data(req_t * req, msgpack_object * obj);
 void parse_request(EV_P_ ev_io *w, int revents) {
 	req_t * req = (req_t *) w;
 
-	req->log->debug(req->log, "Parsing request");
 
 	ssize_t bytes;
-	char buffer[1024];
-	char *pbuf = &buffer[0];
-	size_t to_read = sizeof(buffer);
-
-	if (req->buf) {
-		pbuf = req->buf->start + req->buf->used;
-		to_read = req->buf->free;
-	}
-
-	if (-1 == (bytes = read(req->fd, pbuf, to_read))) {
-		if (errno == EAGAIN || errno == EINTR) {
-			return;
-		} else {
-			req->log->crit(req->log, "Error on read from socket: %s", strerror(errno));
-			return destroy_request(req);
-		}
-	}
-
-	if (!bytes) {
-		req->state = PARSE;
-	}
-
 	switch (req->state) {
-		case READ:
+		case INIT:
 		{
-			ssize_t msg_len;
-			sscanf(pbuf, "%d", &msg_len);
+			req->log->debug(req->log, "Parsing INIT");
+			char buffer[1024] = {};
+			char * pbuf = &buffer[0];
+
+			if (-1 == (bytes = recv(req->fd, buffer, sizeof(buffer) - 1, 0))) {
+				if (errno == EAGAIN || errno == EINTR) {
+					return;
+				} else {
+					req->log->crit(req->log, "Error on read from socket: %s", strerror(errno));
+					return destroy_request(req);
+				}
+			}
+
+			uint32_t msg_len;
+			memcpy(&msg_len, pbuf, sizeof(msg_len));
+			pbuf += sizeof(msg_len);
+
+			req->log->debug(req->log, "Message len = %ld", msg_len);
 
 			if (msg_len > MAX_MESSAGE_SIZE) {
 				req->log->crit(req->log, "Message is too long %d > %d", msg_len, MAX_MESSAGE_SIZE);
@@ -99,23 +92,57 @@ void parse_request(EV_P_ ev_io *w, int revents) {
 				return;
 			}
 
-			if (NULL == (req->buf = init_buffer(msg_len))) {
+			if (NULL == (req->buf = init_buffer(msg_len + sizeof(msg_len)))) {
 				req->log->crit(req->log, "Buffer not allocated!");
 				destroy_request(req);
 				return;
 			}
 
-			push2buffer(req->buf, &buffer[0], bytes);
+			size_t bytes2copy = bytes > msg_len ? msg_len : bytes;
+			buffer_push(req->buf, pbuf, bytes2copy);
+
+			req->log->debug(req->log, "Buffer push succesfull");
+
+			req->state = READ;
 			break;
+		}
+		case READ:
+		{
+			req->log->debug(req->log, "Parsing READ");
+			if (-1 == (bytes = recv(req->fd, req->buf->start + req->buf->used, req->buf->free - 1, 0))) {
+				if (errno == EAGAIN || errno == EINTR) {
+					return;
+				} else {
+					req->log->crit(req->log, "Error on read from socket: %s", strerror(errno));
+					return destroy_request(req);
+				}
+			}
+
+			if (!bytes) {
+				req->state = PARSE;
+			} else {
+				break;
+			}
 		}
 		case PARSE:
 		{
+			req->log->debug(req->log, "Parsing PARSE");
+			req->state = SERVICE;
+
 			msgpack_unpacked unpacked;
 			msgpack_unpacked_init(&unpacked);
 
-			size_t offset = 0;
+			fprintf(stderr, "Before alloc 128\n");
+			char * mem = malloc(128);
+			fprintf(stderr, "After alloc 128 (%p)\n", mem);
+			if (mem) {
+				free(mem);
+			}
 
-			msgpack_unpack_return ret = msgpack_unpack_next(&unpacked, req->buf->start, req->buf->used, &offset);
+			char buf[] = "\x92\xc4\x05\x48\x65\x6c\x6c\x6f\xc4\x0b\x4d\x65\x73\x73\x61\x67\x65\x50\x61\x63\x6b";
+
+			msgpack_unpack_return ret = msgpack_unpack_next(&unpacked, buf, sizeof(buf) - 1, NULL);
+			req->log->debug(req->log, "Ret = %d", ret);
 			if (MSGPACK_UNPACK_PARSE_ERROR == ret) {
 				req->log->error(req->log, "Message-Pack error: MSGPACK_UNPACK_PARSE_ERROR");
 				return destroy_request(req);
@@ -148,8 +175,6 @@ void parse_request(EV_P_ ev_io *w, int revents) {
 
 			msgpack_unpacked_destroy(&unpacked);
 			buffer_free(req->buf);
-
-			req->state = SERVICE;
 
 			ev_io_stop(EV_DEFAULT_ &req->io);
 			// server->on_request(req);

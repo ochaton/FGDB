@@ -13,25 +13,27 @@
 
 int main(int argc, char const *argv[]) {
 	/* creates buffer and serializer instance. */
-	msgpack_sbuffer* buffer = msgpack_sbuffer_new();
-	msgpack_packer* pk = msgpack_packer_new(buffer, msgpack_sbuffer_write);
+	// msgpack_sbuffer* buffer = msgpack_sbuffer_new();
+	// msgpack_packer* pk = msgpack_packer_new(buffer, msgpack_sbuffer_write);
 
-	/* serializes ["PUT", {Key1 => "Value"}]. */
-	msgpack_pack_array(pk, 2);
-	msgpack_pack_bin(pk, 3);
-	msgpack_pack_bin_body(pk, "PUT", 3);
-	msgpack_pack_map(pk, 1);
-	msgpack_pack_bin(pk, 4);
-	msgpack_pack_bin_body(pk, "Key1", 4);
-	msgpack_pack_bin(pk, 5);
-	msgpack_pack_bin_body(pk, "Value", 5);
+	// /* serializes ["PUT", {Key1 => "Value"}]. */
+	// msgpack_pack_array(pk, 2);
+	// msgpack_pack_bin(pk, 5);
+	// msgpack_pack_bin_body(pk, "Hello", 5);
+	// msgpack_pack_bin(pk, 11);
+	// msgpack_pack_bin_body(pk, "MessagePack", 11);
 
-	// fprintf(stderr, "wrote %d bytes\n", write(1, buffer->data, buffer->size));
+	char buf[] = "\x92\xc4\x05\x48\x65\x6c\x6c\x6f\xc4\x0b\x4d\x65\x73\x73\x61\x67\x65\x50\x61\x63\x6b";
 
+	write(1, buf, sizeof(buf)-1);
 	/* deserializes it. */
+	size_t off = 0;
+
 	msgpack_unpacked msg;
 	msgpack_unpacked_init(&msg);
-	msgpack_unpack_return ret = msgpack_unpack_next(&msg, buffer->data, buffer->size, NULL);
+
+	msg.zone = msgpack_zone_new(8192);
+	msgpack_unpack_return ret = msgpack_unpack_next(&msg, buf, sizeof(buf) - 1, &off);
 
 	msgpack_object obj = msg.data;
 	printf("%d\n", obj.type == MSGPACK_OBJECT_ARRAY);
@@ -42,7 +44,7 @@ int main(int argc, char const *argv[]) {
 	// msgpack_object_print(stdout, obj);  /*=> ["Hello", "MessagePack"] */
 
 	/* cleaning */
-	msgpack_sbuffer_free(buffer);
-	msgpack_packer_free(pk);
+	// msgpack_sbuffer_free(buffer);
+	// msgpack_packer_free(pk);
 	return 0;
 }

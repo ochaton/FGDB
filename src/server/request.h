@@ -13,7 +13,7 @@ struct request {
 	ev_io io;
 	int fd;
 
-	enum { READ, WRITE, PARSE, SERVICE } state;
+	enum { INIT, READ, WRITE, PARSE, SERVICE } state;
 
 	ev_server * server;
 
