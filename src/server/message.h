@@ -1,5 +1,5 @@
-#ifndef MESSAE_H
-#define MESSAE_H
+#ifndef MESSAGE_H
+#define MESSAGE_H
 
 #include <stdint.h>
 
@@ -12,15 +12,15 @@ struct message_str {
 };
 
 struct message {
-	enum msg_command { GET, PUT, UPDATE, DELETE, PEEK } cmd;
-	str_t key;
-	str_t val; // Can be nil
+	enum msg_command { GET = 0x1, PUT = 0x2, UPDATE = 0x3, DELETE = 0x4, PEEK = 0x5 } cmd;
+	str_t key, val;
 };
 
 msg_t * init_message(uint32_t bytes);
 void destroy_message(msg_t * msg);
 int message_set(str_t * mstr, const char * src, uint32_t size);
-int message_command(msg_t *msg, const char * src, uint32_t size);
+int message_command(msg_t *msg, uint32_t num);
 
+extern const char * message_cmd_str[];
 
-#endif // MESSAE_H
+#endif // MESSAGE_H

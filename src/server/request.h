@@ -14,7 +14,6 @@ struct request {
 	int fd;
 
 	enum { INIT, READ, WRITE, PARSE, SERVICE } state;
-
 	ev_server * server;
 
 	struct log * log;

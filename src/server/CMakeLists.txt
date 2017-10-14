@@ -37,7 +37,7 @@ endif(MSGPACK_INCLUDE_DIR AND MSGPACK_LIBRARY)
 
 set(CMAKE_BUILD_TYPE Release)
 set(CMAKE_C_STANDARD 99)
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O2 -Werror -Wignored-qualifiers -Winit-self\
+set(CMAKE_CXX_FLAGS "${CMAKE_C_FLAGS} -ggdb -Werror -Wignored-qualifiers -Winit-self\
 	-Wswitch-default -Wfloat-equal -Wshadow -Wpointer-arith \
 	-Wtype-limits -Wempty-body -Wmissing-field-initializers -Wextra \
 	-Wmissing-field-initializers -Wextra")

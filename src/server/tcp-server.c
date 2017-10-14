@@ -21,8 +21,6 @@
 #include "staff.h"
 
 static void accept_cb (EV_P_ ev_io *w, int revents) {
-	puts("unix stream socket has become readable\n");
-
 	// since ev_io is the first member,
 	// watcher `w` has the address of the
 	// start of the ev_server struct
@@ -36,7 +34,6 @@ static void accept_cb (EV_P_ ev_io *w, int revents) {
 			return;
 		}
 	} else {
-		fprintf(stderr, "accepted a clientfd = %d\n", client_fd);
 		init_request(client_fd, server);
 	}
 }

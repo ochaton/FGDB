@@ -20,9 +20,17 @@
 
 // project-staff:
 #include "tcp-server.h" // ev_server
+#include "request.h" // client request
 
 static void not_blocked (EV_P_ ev_periodic *w, int revents) {
 	fprintf(stderr, "Not_blocked!\n");
+}
+
+void on_request (req_t *req) {
+	req->log->info(req->log, "Starting processing request");
+	req->log->info(req->log, "Cmd %s { key = %s }", message_cmd_str[req->msg->cmd], req->msg->key.ptr);
+
+	destroy_request(req);
 }
 
 int main (int argc, char const *argv[]) {
@@ -35,6 +43,7 @@ int main (int argc, char const *argv[]) {
 	// ev_periodic_start(loop, &every_few_seconds);
 
 	ev_server server = server_init("0.0.0.0", 2016, INET);
+	server.on_request = on_request;
 	// fprintf(stderr, "Server inited!\n");
 	// fprintf(stderr, "tcp-socket starting...\n");
 

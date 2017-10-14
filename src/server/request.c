@@ -62,7 +62,6 @@ static int parse_data(req_t * req, msgpack_object * obj);
 void parse_request(EV_P_ ev_io *w, int revents) {
 	req_t * req = (req_t *) w;
 
-
 	ssize_t bytes;
 	switch (req->state) {
 		case INIT:
@@ -109,7 +108,7 @@ void parse_request(EV_P_ ev_io *w, int revents) {
 		case READ:
 		{
 			req->log->debug(req->log, "Parsing READ");
-			if (-1 == (bytes = recv(req->fd, req->buf->start + req->buf->used, req->buf->free - 1, 0))) {
+			if (-1 == (bytes = recv(req->fd, &req->buf->start[req->buf->used], req->buf->free, 0))) {
 				if (errno == EAGAIN || errno == EINTR) {
 					return;
 				} else {
@@ -132,16 +131,7 @@ void parse_request(EV_P_ ev_io *w, int revents) {
 			msgpack_unpacked unpacked;
 			msgpack_unpacked_init(&unpacked);
 
-			fprintf(stderr, "Before alloc 128\n");
-			char * mem = malloc(128);
-			fprintf(stderr, "After alloc 128 (%p)\n", mem);
-			if (mem) {
-				free(mem);
-			}
-
-			char buf[] = "\x92\xc4\x05\x48\x65\x6c\x6c\x6f\xc4\x0b\x4d\x65\x73\x73\x61\x67\x65\x50\x61\x63\x6b";
-
-			msgpack_unpack_return ret = msgpack_unpack_next(&unpacked, buf, sizeof(buf) - 1, NULL);
+			msgpack_unpack_return ret = msgpack_unpack_next(&unpacked, &req->buf->start[0], req->buf->used, NULL);
 			req->log->debug(req->log, "Ret = %d", ret);
 			if (MSGPACK_UNPACK_PARSE_ERROR == ret) {
 				req->log->error(req->log, "Message-Pack error: MSGPACK_UNPACK_PARSE_ERROR");
@@ -177,7 +167,7 @@ void parse_request(EV_P_ ev_io *w, int revents) {
 			buffer_free(req->buf);
 
 			ev_io_stop(EV_DEFAULT_ &req->io);
-			// server->on_request(req);
+			req->server->on_request(req);
 
 			return;
 		}
@@ -191,14 +181,12 @@ void parse_request(EV_P_ ev_io *w, int revents) {
 }
 
 static int parse_command(req_t * req, msgpack_object * obj) {
-	if (obj->type != MSGPACK_OBJECT_STR ||
-		obj->type != MSGPACK_OBJECT_BIN
-	) {
-		req->log->error(req->log, "Command expected as string or bin, got %d", obj->type);
+	if (obj->type != MSGPACK_OBJECT_POSITIVE_INTEGER) {
+		req->log->error(req->log, "Command expected as POSITIVE_INTEGER, got %d", obj->type);
 		return -1;
 	}
 
-	return message_command(req->msg, obj->via.str.ptr, obj->via.str.size);
+	return message_command(req->msg, obj->via.i64);
 }
 
 static int parse_data(req_t * req, msgpack_object * obj) {

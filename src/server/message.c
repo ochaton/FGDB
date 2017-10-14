@@ -3,40 +3,43 @@
 #include <string.h>
 
 msg_t * init_message(uint32_t bytes) {
-	msg_t * msg = (msg_t *) malloc(sizeof(msg_t) + bytes);
+	msg_t * msg = (msg_t *) malloc(sizeof(msg_t));
+	msg->key.ptr = msg->val.ptr = NULL;
 	return msg;
 }
 
 void destroy_message(msg_t * msg) {
+	if (msg->key.ptr) free(msg->key.ptr);
+	if (msg->val.ptr) free(msg->val.ptr);
 	free(msg);
 }
 
 int message_set(str_t * mstr, const char * src, uint32_t size) {
 	if (!size) {
 		mstr->size = 0;
-		mstr->ptr  = NULL;
+		mstr->ptr = NULL;
 		return 0;
 	}
+	if (mstr->ptr) {
+		free(mstr->ptr);
+	}
+	mstr->ptr = (char *) malloc(size + 1);
 	strncpy(mstr->ptr, src, size);
+	mstr->ptr[size] = 0;
 	mstr->size = size;
 	return 0;
 }
 
-int message_command(msg_t *msg, const char * src, uint32_t size) {
-	char cmd[10];
-	strncpy(cmd, src, size);
-	if (!strncmp(cmd, "GET", 3)) {
-		msg->cmd = GET;
-	} else if (!strncmp(cmd, "PUT", 3)) {
-		msg->cmd = PUT;
-	} else if (!strncmp(cmd, "UPDATE", 6)) {
-		msg->cmd = UPDATE;
-	} else if (!strncmp(cmd, "DELETE", 6)) {
-		msg->cmd = DELETE;
-	} else if (!strncmp(cmd, "PEEK", 4)) {
-		msg->cmd = PEEK;
-	} else {
-		return -1;
-	}
+int message_command(msg_t *msg, uint32_t num) {
+	msg->cmd = (enum msg_command) num;
 	return 0;
 }
+
+const char * message_cmd_str[] = {
+	"GET",
+	"PUT",
+	"UPDATE",
+	"DELETE",
+	"PEEK",
+	"UNKNOWN",
+};

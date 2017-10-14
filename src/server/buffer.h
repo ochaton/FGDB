@@ -5,8 +5,8 @@
 #include <string.h>
 
 typedef struct buf {
-	char * start;
 	size_t total, used, free;
+	char start[1];
 } buf_t;
 
 buf_t * init_buffer(size_t buflen);

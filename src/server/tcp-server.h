@@ -7,6 +7,8 @@
 
 #include "request.h"
 
+typedef struct request req_t;
+
 struct ev_server {
 	ev_io io;
 	int fd;
@@ -19,7 +21,7 @@ struct ev_server {
 		struct sockaddr_in socket_in;
 		struct sockaddr_un socket_un;
 	};
-	// void (*on_request)(req_t *);
+	void (*on_request)(req_t *);
 };
 
 typedef struct ev_server ev_server;

@@ -22,7 +22,7 @@ void destroy_buffer(buf_t * buf) {
 void buffer_push(buf_t * buf, const char *src, size_t bytes) {
 	if (!src) return;
 	assert(bytes <= buf->free);
-	strncpy(buf->start + buf->used, src, bytes);
+	memcpy(&buf->start[buf->used], src, bytes);
 	buf->free -= bytes;
 	buf->used += bytes;
 	return;
