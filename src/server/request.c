@@ -51,6 +51,8 @@ void destroy_request(req_t * req) {
 	ev_io_stop(EV_DEFAULT_ &req->io);
 	close(req->fd);
 
+	req->log->info(req->log, "Request finished");
+
 	if (req->log) destroy_log(req->log);
 	free(req);
 	return;
@@ -79,8 +81,8 @@ void parse_request(EV_P_ ev_io *w, int revents) {
 				}
 			}
 
-			uint32_t msg_len;
-			memcpy(&msg_len, pbuf, sizeof(msg_len));
+			uint32_t msg_len = *(uint32_t *) pbuf;
+			// memcpy(&msg_len, pbuf, sizeof(msg_len));
 			pbuf += sizeof(msg_len);
 
 			req->log->debug(req->log, "Message len = %ld", msg_len);
@@ -91,7 +93,7 @@ void parse_request(EV_P_ ev_io *w, int revents) {
 				return;
 			}
 
-			if (NULL == (req->buf = init_buffer(msg_len + sizeof(msg_len)))) {
+			if (NULL == (req->buf = init_buffer(msg_len))) {
 				req->log->crit(req->log, "Buffer not allocated!");
 				destroy_request(req);
 				return;
@@ -101,26 +103,33 @@ void parse_request(EV_P_ ev_io *w, int revents) {
 			buffer_push(req->buf, pbuf, bytes2copy);
 
 			req->log->debug(req->log, "Buffer push succesfull");
-
 			req->state = READ;
-			break;
 		}
 		case READ:
 		{
 			req->log->debug(req->log, "Parsing READ");
-			if (-1 == (bytes = recv(req->fd, &req->buf->start[req->buf->used], req->buf->free, 0))) {
-				if (errno == EAGAIN || errno == EINTR) {
-					return;
-				} else {
-					req->log->crit(req->log, "Error on read from socket: %s", strerror(errno));
-					return destroy_request(req);
+			if (req->buf->free) {
+				if (-1 == (bytes = recv(req->fd, &req->buf->start[req->buf->used], req->buf->free, 0))) {
+					if (errno == EAGAIN || errno == EINTR) {
+						return;
+					} else {
+						req->log->crit(req->log, "Error on read from socket: %s", strerror(errno));
+						return destroy_request(req);
+					}
 				}
-			}
 
-			if (!bytes) {
-				req->state = PARSE;
+				req->buf->free -= bytes;
+				req->buf->used += bytes;
+
+				req->log->debug(req->log, "Available %u bytes", req->buf->free);
+
+				if (!bytes || !req->buf->free) {
+					req->state = PARSE;
+				} else {
+					break;
+				}
 			} else {
-				break;
+				req->state = PARSE;
 			}
 		}
 		case PARSE:

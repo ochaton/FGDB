@@ -30,6 +30,9 @@ void on_request (req_t *req) {
 	req->log->info(req->log, "Starting processing request");
 	req->log->info(req->log, "Cmd %s { key = %s }", message_cmd_str[req->msg->cmd], req->msg->key.ptr);
 
+	const char msg[] = "ok";
+	write(req->fd, msg, strlen(msg));
+
 	destroy_request(req);
 }
 
