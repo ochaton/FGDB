@@ -50,6 +50,7 @@ set(server_sources
 	request.c
 	staff.c
 	tcp-server.c
+	proto.c
 	)
 
 add_library(server STATIC ${server_sources})

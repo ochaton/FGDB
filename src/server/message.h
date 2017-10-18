@@ -3,18 +3,23 @@
 
 #include <stdint.h>
 
-typedef struct message msg_t;
-typedef struct message_str str_t;
-
-struct message_str {
+typedef struct {
 	uint32_t size;
 	char * ptr;
+} str_t;
+
+enum msg_command_t {
+	PEEK   = 0x1,
+	SELECT = 0x2,
+	INSERT = 0x3,
+	UPDATE = 0x4,
+	DELETE = 0x5,
 };
 
-struct message {
-	enum msg_command { GET = 0x1, PUT = 0x2, UPDATE = 0x3, DELETE = 0x4, PEEK = 0x5 } cmd;
+typedef struct {
+	enum msg_command_t cmd;
 	str_t key, val;
-};
+} msg_t;
 
 msg_t * init_message(uint32_t bytes);
 void destroy_message(msg_t * msg);

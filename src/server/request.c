@@ -1,6 +1,7 @@
 #include "request.h"
 #include "staff.h"
 #include "log.h"
+#include "proto.h"
 
 #include <stdlib.h>
 #include <errno.h>
@@ -13,7 +14,10 @@
 
 enum { MAX_MESSAGE_SIZE = 10*1<<10 };
 
-void parse_request(EV_P_  ev_io *w, int revents);
+static void parse_request(EV_P_  ev_io *w, int revents);
+static int parse_command(req_t * req, msgpack_object * obj);
+static int parse_data(req_t * req, msgpack_object * obj);
+static void write_reply(EV_P_ ev_io *w, int revents);
 
 void init_request(int fd, ev_server * server) {
 	req_t * req = (req_t *) malloc(sizeof(req_t));
@@ -58,10 +62,7 @@ void destroy_request(req_t * req) {
 	return;
 }
 
-static int parse_command(req_t * req, msgpack_object * obj);
-static int parse_data(req_t * req, msgpack_object * obj);
-
-void parse_request(EV_P_ ev_io *w, int revents) {
+static void parse_request(EV_P_ ev_io *w, int revents) {
 	req_t * req = (req_t *) w;
 
 	ssize_t bytes;
@@ -82,7 +83,6 @@ void parse_request(EV_P_ ev_io *w, int revents) {
 			}
 
 			uint32_t msg_len = *(uint32_t *) pbuf;
-			// memcpy(&msg_len, pbuf, sizeof(msg_len));
 			pbuf += sizeof(msg_len);
 
 			req->log->debug(req->log, "Message len = %ld", msg_len);
@@ -108,8 +108,8 @@ void parse_request(EV_P_ ev_io *w, int revents) {
 		case READ:
 		{
 			req->log->debug(req->log, "Parsing READ");
-			if (req->buf->free) {
-				if (-1 == (bytes = recv(req->fd, &req->buf->start[req->buf->used], req->buf->free, 0))) {
+			if (buffer_left(req->buf) > 0) {
+				if (-1 == (bytes = recv(req->fd, req->buf->end, buffer_left(req->buf), 0))) {
 					if (errno == EAGAIN || errno == EINTR) {
 						return;
 					} else {
@@ -118,12 +118,8 @@ void parse_request(EV_P_ ev_io *w, int revents) {
 					}
 				}
 
-				req->buf->free -= bytes;
 				req->buf->used += bytes;
-
-				req->log->debug(req->log, "Available %u bytes", req->buf->free);
-
-				if (!bytes || !req->buf->free) {
+				if (!bytes || !buffer_left(req->buf)) {
 					req->state = PARSE;
 				} else {
 					break;
@@ -140,7 +136,7 @@ void parse_request(EV_P_ ev_io *w, int revents) {
 			msgpack_unpacked unpacked;
 			msgpack_unpacked_init(&unpacked);
 
-			msgpack_unpack_return ret = msgpack_unpack_next(&unpacked, &req->buf->start[0], req->buf->used, NULL);
+			msgpack_unpack_return ret = msgpack_unpack_next(&unpacked, req->buf->start, req->buf->used, NULL);
 			req->log->debug(req->log, "Ret = %d", ret);
 			if (MSGPACK_UNPACK_PARSE_ERROR == ret) {
 				req->log->error(req->log, "Message-Pack error: MSGPACK_UNPACK_PARSE_ERROR");
@@ -254,4 +250,58 @@ static int parse_data(req_t * req, msgpack_object * obj) {
 			return -1;
 		}
 	}
+}
+
+void request_reply(req_t * req, proto_reply_t * reply) {
+
+	/* REWRITE THIS! Proxy buffer to msgpack_packer! */
+
+	msgpack_sbuffer * buf = serialize_reply(reply);
+	if (req->buf) destroy_buffer(req->buf);
+
+	if (!(req->buf = init_buffer(buf->size))) {
+		req->log->error(req->log, "Error on allocating buffer errno = %s", strerror(errno));
+		destroy_request(req);
+		return;
+	}
+
+	buffer_push(req->buf, buf->data, buf->size);
+	req->state = WRITE;
+
+	ev_io_init(&req->io, write_reply, req->fd, EV_WRITE);
+	ev_io_start(EV_DEFAULT_ &req->io);
+}
+
+static void write_reply(EV_P_ ev_io *w, int revents) {
+	req_t *req = (req_t *) w;
+
+	if (req->state != WRITE) {
+		req->log->warn(req->log, "Write on not write-state request");
+		destroy_request(req);
+		return;
+	}
+
+	if (!req->buf->used) {
+		req->log->info(req->log, "Write finished");
+		destroy_request(req);
+		return;
+	}
+
+	ssize_t bytes;
+	if (-1 == (bytes = send(req->fd, req->buf->start, req->buf->used, 0))) {
+		if (errno == EAGAIN || errno == EINTR) {
+			return;
+		} else {
+			req->log->error(req->log, "Error on write to socket %s", strerror(errno));
+			destroy_request(req);
+			return;
+		}
+	}
+
+	req->log->debug(req->log, "Wrote ebal %ld", bytes);
+
+	req->buf->start += bytes;
+	req->buf->used  -= bytes;
+
+	return;
 }

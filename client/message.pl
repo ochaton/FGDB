@@ -10,7 +10,7 @@ my %db = (
 	port => 2016,
 );
 
-my $message = pack "V/A*", Data::MessagePack->new->pack([0x0, "Message"]);
+my $message = pack "V/A*", Data::MessagePack->new->pack([0x1, "Message"]);
 
 socket my $sock, PF_INET, SOCK_STREAM, getprotobyname("tcp") // die "$! $@";
 say "Socket created";
@@ -20,4 +20,7 @@ my $bytes = send ($sock, $message, 0) // die "$! $@";
 say "Sended $bytes bytes";
 
 recv ($sock, my $buffer, 4096, 0) // die "$! $@";
-say "Got from socket: $buffer";
+say "Got from socket: " .(length $buffer). unpack "H*", $buffer;
+
+
+

@@ -21,6 +21,8 @@
 // project-staff:
 #include "tcp-server.h" // ev_server
 #include "request.h" // client request
+#include "proto.h" // protocol
+
 
 static void not_blocked (EV_P_ ev_periodic *w, int revents) {
 	fprintf(stderr, "Not_blocked!\n");
@@ -28,12 +30,17 @@ static void not_blocked (EV_P_ ev_periodic *w, int revents) {
 
 void on_request (req_t *req) {
 	req->log->info(req->log, "Starting processing request");
-	req->log->info(req->log, "Cmd %s { key = %s }", message_cmd_str[req->msg->cmd], req->msg->key.ptr);
+	req->log->info(req->log, "Cmd `%s` { key = `%s` }", message_cmd_str[req->msg->cmd], req->msg->key.ptr);
 
-	const char msg[] = "ok";
-	write(req->fd, msg, strlen(msg));
+	proto_reply_t reply;
+	reply.code = REPLY_OK;
+	reply.cmd  = req->msg->cmd;
 
-	destroy_request(req);
+	const char reply_msg[] = "0123456789";
+	reply.val.size = sizeof(reply_msg);
+	reply.val.ptr  = (char *) &reply_msg[0];
+
+	request_reply(req, &reply);
 }
 
 int main (int argc, char const *argv[]) {

@@ -19,4 +19,6 @@ int buffer_pop(buf_t * buf, char * dest, size_t bytes);
 int buffer_shift(buf_t * buf, char * dest, size_t bytes);
 int buffer_unshift(buf_t * buf, const char *src, size_t bytes);
 
+#define buffer_left(buffer) (buffer)->total - (buffer)->used
+
 #endif // BUFFER_H

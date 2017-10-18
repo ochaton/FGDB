@@ -31,15 +31,15 @@ int message_set(str_t * mstr, const char * src, uint32_t size) {
 }
 
 int message_command(msg_t *msg, uint32_t num) {
-	msg->cmd = (enum msg_command) num;
+	msg->cmd = (enum msg_command_t) num;
 	return 0;
 }
 
 const char * message_cmd_str[] = {
-	"GET",
-	"PUT",
+	"UNKNOWN",
+	"PEEK",
+	"SELECT",
+	"INSERT",
 	"UPDATE",
 	"DELETE",
-	"PEEK",
-	"UNKNOWN",
 };

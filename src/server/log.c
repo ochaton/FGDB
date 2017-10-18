@@ -35,6 +35,7 @@ void debug (const log_t *, const char * fmt, ...);
 void info  (const log_t *, const char * fmt, ...);
 void error (const log_t *, const char * fmt, ...);
 void crit  (const log_t *, const char * fmt, ...);
+void warn  (const log_t *, const char * fmt, ...);
 
 log_t * init_log(void) {
 	log_t * log = (log_t *) malloc(sizeof(log_t));
@@ -44,6 +45,7 @@ log_t * init_log(void) {
 	log->info  = info;
 	log->error = error;
 	log->crit  = crit;
+	log->warn  = warn;
 	return log;
 }
 
@@ -92,6 +94,15 @@ void crit (const log_t * self, const char * fmt, ...) {
 	va_start(args,fmt);
 
 	LOG_MESSAGE("CRIT", self->reqid, fmt, args);
+	va_end(args);
+	return;
+}
+
+void warn (const log_t * self, const char * fmt, ...) {
+	va_list args;
+	va_start(args,fmt);
+
+	LOG_MESSAGE("WARN", self->reqid, fmt, args);
 	va_end(args);
 	return;
 }

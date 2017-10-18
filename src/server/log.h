@@ -6,6 +6,7 @@ struct log {
 	char reqid[8];
 	void (*debug) (const log_t * self, const char * fmt, ...);
 	void (*info)  (const log_t * self, const char * fmt, ...);
+	void (*warn)  (const log_t * self, const char * fmt, ...);
 	void (*error) (const log_t * self, const char * fmt, ...);
 	void (*crit)  (const log_t * self, const char * fmt, ...);
 };
