@@ -4,23 +4,71 @@ use strict;
 use warnings;
 use Socket;
 use Data::MessagePack;
+use Data::Dumper;
 
-my %db = (
+our %db = (
 	host => '127.0.0.1',
 	port => 2016,
 );
 
-my $message = pack "V/A*", Data::MessagePack->new->pack([0x1, "Message"]);
+my %COMMANDS = (
+	PEEK   => 0x1,
+	SELECT => 0x2,
+	INSERT => 0x3,
+	UPDATE => 0x4,
+	DELETE => 0x5,
+);
 
-socket my $sock, PF_INET, SOCK_STREAM, getprotobyname("tcp") // die "$! $@";
-say "Socket created";
-connect $sock, sockaddr_in($db{port}, inet_aton $db{host}) // die "$! $@";
-say "Connected to $db{host}:$db{port}";
-my $bytes = send ($sock, $message, 0) // die "$! $@";
-say "Sended $bytes bytes";
+sub send_message {
+	my $cmd = shift;
+	my $message = pack "V/A*", Data::MessagePack->new->pack([ $COMMANDS{$cmd}, @_ ]);
 
-recv ($sock, my $buffer, 4096, 0) // die "$! $@";
-say "Got from socket: " .(length $buffer). unpack "H*", $buffer;
+	warn $message;
+	# warn join " ", split 2, unpack "H*", $message;
+
+	socket my $sock, PF_INET, SOCK_STREAM, getprotobyname("tcp") // die "$! $@";
+	say "Socket created";
+	connect $sock, sockaddr_in($db{port}, inet_aton $db{host}) // die "$! $@";
+	say "Connected to $db{host}:$db{port}";
+	my $bytes = send ($sock, $message, 0) // die "$! $@";
+	say "Sended $bytes bytes";
+
+	recv ($sock, my $buffer, 4096, 0) // die "$! $@";
+	say "Got from socket: " .(length $buffer);
+
+	my @reply_code  = qw (OK ERROR FATAL);
+	my @fgdb_code   = qw (CODE_OK KEY_EXISTS KEY_NOT_FOUND);
+	my @proto_error = qw (UNKNOWN ERROR_COMMAND);
 
 
+	my $raw = Data::MessagePack->new->unpack($buffer);
+	unless (ref $raw eq 'ARRAY') {
+		warn "Reply from server is not an ARRAY";
+		say Dumper($raw);
+		exit 1;
+	}
 
+	my $reply;
+	$reply->{code} = $reply_code[$raw->[0]];
+	if ($reply->{code} eq 'ERROR') {
+		$reply->{error} = $fgdb_code[$raw->[1]];
+	} elsif ($reply->{code} eq 'FATAL') {
+		$reply->{fatal} = $proto_error[$raw->[1]];
+	} else {
+		unless (ref $raw->[1] eq 'HASH') {
+			warn "Expected HASH got ".ref $raw->[1];
+			say Dumper ($raw);
+			exit 1;
+		}
+
+		$reply = {
+			%$reply,
+			%{$raw->[1]},
+		};
+	}
+
+	say Dumper($reply);
+}
+
+# send_message PEEK => 'message';
+send_message INSERT => { key => 'value' };

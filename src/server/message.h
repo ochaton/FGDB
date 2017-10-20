@@ -2,11 +2,7 @@
 #define MESSAGE_H
 
 #include <stdint.h>
-
-typedef struct {
-	uint32_t size;
-	char * ptr;
-} str_t;
+#include "common.h"
 
 enum msg_command_t {
 	PEEK   = 0x1,

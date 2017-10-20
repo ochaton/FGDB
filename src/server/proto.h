@@ -7,11 +7,14 @@
 
 enum proto_reply_error_t {
 	PROTO_ERROR_UNKNOWN = 0x0,
+	PROTO_ERROR_COMMAND = 0x1,
+	PROTO_ERROR_VALUE_REQUIRED = 0x2,
 };
 
 enum proto_reply_code_t {
 	REPLY_OK    = 0x0,
 	REPLY_ERROR = 0x1,
+	REPLY_FATAL = 0x2,
 };
 
 enum fgdb_code_t {
@@ -29,6 +32,7 @@ typedef struct {
 	// uint32_t seq;
 	enum proto_reply_code_t code;
 	union {
+		enum proto_reply_error_t fatal;
 		enum fgdb_code_t err;
 		enum msg_command_t cmd;
 	};

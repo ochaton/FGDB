@@ -57,7 +57,7 @@ void buddy_new(size_t size) { // in Kb
 	fprintf(stderr, "leaves = %u\n", buddy_info->leaves);
 	fprintf(stderr, "memory = %lx\n", (long) memory);
 #endif
-	return;	
+	return;
 }
 
 void buddy_destroy(void) {
@@ -79,7 +79,7 @@ static inline uint32_t _capasity_from_pos(uint32_t pos) {
 		4: 9 10 11 12 13 14 15 16
 	*/
 	uint32_t level = _level_from_pos(pos);
-	return (1 << (buddy_info->level - level)) * MIN_CHUNK / Kb;	
+	return (1 << (buddy_info->level - level)) * MIN_CHUNK / Kb;
 }
 
 static void * _buddy_ack_memory (size_t kbytes, uint32_t pos) {

@@ -6,7 +6,7 @@ msgpack_sbuffer* serialize_reply (proto_reply_t * reply) {
 	msgpack_packer* packer = msgpack_packer_new(buffer, msgpack_sbuffer_write);
 
 	msgpack_pack_array(packer, 2);
-	msgpack_pack_int(packer, REPLY_OK);
+	msgpack_pack_int(packer, reply->code);
 
 	switch(reply->code) {
 		case REPLY_OK:
@@ -29,6 +29,11 @@ msgpack_sbuffer* serialize_reply (proto_reply_t * reply) {
 		case REPLY_ERROR:
 		{
 			msgpack_pack_int(packer, reply->err);
+			break;
+		}
+		case REPLY_FATAL:
+		{
+			msgpack_pack_int(packer, reply->fatal);
 			break;
 		}
 	}
