@@ -24,14 +24,13 @@
 #include "server/proto.h" // protocol
 
 #include "lib/buddy/memory.h"
-
 #include "memory/hashmap.h"
 
-hashmap_t * hashmap;
+#include "transactions/queue.h"
 
-static void not_blocked (EV_P_ ev_periodic *w, int revents) {
-	fprintf(stderr, "Not_blocked!\n");
-}
+hashmap_t * hashmap;
+queue_t * trans_queue;
+pthread_rwlock_t hashmap_lock;
 
 extern void operation_peek(req_t * req, hashmap_t * hashmap);
 extern void operation_select(req_t * req, hashmap_t * hashmap);
@@ -45,29 +44,20 @@ void on_request (req_t *req) {
 	req->log->info(req->log, "Cmd `%s` { key = `%s` }", message_cmd_str[req->msg->cmd], req->msg->key.ptr);
 
 	switch(req->msg->cmd) {
-		case PEEK:
+		case PEEK: case SELECT: case INSERT: case DELETE: case UPDATE:
 		{
-			operation_peek(req, hashmap);
-			return;
-		}
-		case SELECT:
-		{
-			operation_select(req, hashmap);
-			return;
-		}
-		case INSERT:
-		{
-			operation_insert(req, hashmap);
-			return;
-		}
-		case DELETE:
-		{
-			operation_delete(req, hashmap);
-			return;
-		}
-		case UPDATE:
-		{
-			operation_update(req, hashmap);
+			transaction_t * trans = convert_request(req);
+			if (!trans) {
+				proto_reply_t reply;
+				req->log->error(req->log, "Transaction not created errno=%s", strerror(errno));
+				reply.code = REPLY_FATAL;
+				reply.err  = PROTO_ERROR_UNKNOWN;
+
+				request_reply(req, &reply);
+				return;
+			}
+
+			push_queue(trans_queue, trans);
 			return;
 		}
 		default:
@@ -83,6 +73,55 @@ void on_request (req_t *req) {
 	}
 }
 
+static void idle_cb(EV_P_ ev_periodic *w, int revents) {
+	// fprintf(stderr, "I'm not blocked\n");
+}
+
+void * transaction_queue_worker (void * args) {
+
+	pthread_detach(pthread_self());
+	ignore_sigpipe();
+
+	fprintf(stderr, "Queue Worker started\n");
+
+	while (1) {
+
+		transaction_t * trans = pop_queue(trans_queue);
+		if (!trans) {
+			continue;
+		}
+
+		switch(trans->msg->cmd) {
+			case PEEK:
+			{
+				operation_peek(trans->ancestor, hashmap);
+				break;
+			}
+			case SELECT:
+			{
+				operation_select(trans->ancestor, hashmap);
+				break;
+			}
+			case INSERT:
+			{
+				operation_insert(trans->ancestor, hashmap);
+				break;
+			}
+			case DELETE:
+			{
+				operation_delete(trans->ancestor, hashmap);
+				break;
+			}
+			case UPDATE:
+			{
+				operation_update(trans->ancestor, hashmap);
+				break;
+			}
+		}
+	}
+
+}
+
 int init_hashmap (size_t max_keys) {
 	hashmap = hashmap_new(max_keys);
 	if (!hashmap) {
@@ -94,6 +133,14 @@ int init_hashmap (size_t max_keys) {
 
 int start_server() {
 	struct ev_loop *loop = ev_default_loop(0);
+
+	ev_idle idle_watcher;
+	ev_idle_init(&idle_watcher, idle_cb);
+	ev_idle_start(loop, &idle_watcher);
+
+	// struct ev_periodic every_few_seconds;
+	// ev_periodic_init(&every_few_seconds, not_blocked, 0, 1, 0);
+	// ev_periodic_start(EV_A_ &every_few_seconds);
 
 	ev_server server = server_init("0.0.0.0", 2016, INET);
 	server.on_request = on_request;
@@ -115,6 +162,23 @@ int main(int argc, char const *argv[]) {
 	if (status) {
 		return status;
 	}
+
 	init_buddy(1024);
+	if (NULL == (trans_queue = init_queue())) {
+		fprintf(stderr, "Queue not allocated errno=%s\n", strerror(errno));
+		exit(EXIT_FAILURE);
+	}
+
+	pthread_t queue_worker;
+	if (pthread_create(&queue_worker, NULL, transaction_queue_worker, NULL)) {
+		fprintf(stderr, "Thread not created\n");
+		exit(EXIT_FAILURE);
+	}
+
+	if (pthread_rwlock_init(&hashmap_lock, NULL)) {
+		fprintf(stderr, "Creation of rwlock failed\n");
+		exit(EXIT_FAILURE);
+	}
+
 	start_server();
 }

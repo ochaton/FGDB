@@ -11,6 +11,8 @@
 #include <unistd.h>
 #include <fcntl.h>
 
+#include <pthread.h> // pthread_sigmask
+
 #include <arpa/inet.h> // inet_aton
 
 
@@ -179,4 +181,14 @@ void hexdump(void * ptr, size_t bytes) {
 	free(hd_text);
 	free(hd_buf);
 	return;
+}
+
+void ignore_sigpipe() {
+	sigset_t msk;
+	sigemptyset(&msk);
+	sigaddset(&msk, SIGPIPE);
+	if (pthread_sigmask(SIG_BLOCK, &msk, NULL)) {
+		fprintf(stderr, "sigmask failed! errno=%s\n", strerror(errno));
+		exit(EXIT_FAILURE);
+	}
 }

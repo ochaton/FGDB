@@ -271,6 +271,7 @@ void request_reply(req_t * req, proto_reply_t * reply) {
 
 	ev_io_init(&req->io, write_reply, req->fd, EV_WRITE);
 	ev_io_start(EV_DEFAULT_ &req->io);
+	free(buf);
 }
 
 static void write_reply(EV_P_ ev_io *w, int revents) {

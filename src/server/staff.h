@@ -11,4 +11,5 @@ int server_inet_init (struct ev_server * server, char * ip_addr_str, uint16_t po
 int setnonblock (int fd);
 unsigned staff_random();
 void hexdump(void * p, size_t bytes);
+void ignore_sigpipe();
 #endif

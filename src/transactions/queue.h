@@ -5,6 +5,9 @@
 #include "server/request.h"
 #include "lib/heap/heap.h"
 
+#include <pthread.h>
+#include <semaphore.h>
+
 typedef struct {
 	req_t* ancestor;
 	msg_t* msg;
@@ -12,6 +15,9 @@ typedef struct {
 
 typedef struct {
 	heap* h;
+	sem_t ntrans_sem;
+	pthread_mutex_t mutex;
+	uint32_t transactions;
 } queue_t;
 
 transaction_t* convert_request(req_t* req);
