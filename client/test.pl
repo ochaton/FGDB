@@ -7,7 +7,7 @@ $|++;
 use FGDB;
 use Data::Dumper;
 
-use constant KEYS_AMOUNT => 5;
+use constant KEYS_AMOUNT => 3;
 
 sub req {
 	my %params = @_;
@@ -59,9 +59,17 @@ sub main {
 	print("PEEKS DONE------------\n");
 	do_inserts(
 		sub {
-			return ($_[0]->{status} // '') eq 'CODE_OK';
+			return ($_[0]->{code} // '') eq 'OK';
 		}
 	);
+	print("INSERTS DONE----------\n");
+	do_selects(
+		sub {
+			return ($_[0]->{code} // '') eq 'OK';
+		},
+		$answers
+	);
+	print("SELECTS DONE----------\n");
 	do_inserts(
 		sub {
 			return ($_[0]->{error} // '') eq 'KEY_EXISTS';
@@ -70,22 +78,10 @@ sub main {
 	print("INSERTS DONE----------\n");
 	do_deletes(
 		sub {
-			return ($_[0]->{status} // '') eq 'CODE_OK';
+			return ($_[0]->{code} // '') eq 'OK';
 		}
 	);
 	print("DELETES DONE----------\n");
-	do_inserts(
-		sub {
-			return ($_[0]->{status} // '') eq 'CODE_OK';
-		}
-	);
-	print("INSERTS DONE----------\n");
-	do_selects(
-		sub {
-			return ($_[0]->{status} // '') eq 'CODE_OK';
-		},
-		$answers
-	);
 	print("DONE TESTING\n");
 }
 

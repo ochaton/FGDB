@@ -6,7 +6,6 @@ use warnings;
 use Socket;
 use Data::MessagePack;
 use Data::Dumper;
-use DDP;
 
 our %db = (
 	host => '127.0.0.1',
