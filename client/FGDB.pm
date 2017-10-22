@@ -74,7 +74,11 @@ sub send_message {
 				};
 			}
 		} else {
-			$reply->{status} = $fgdb_code[$raw->[1]];
+			if ($cmd eq 'INSERT' or $cmd eq 'UPDATE' or $cmd eq 'PEEK') {
+				$reply->{status} = $fgdb_code[$raw->[1]];
+			} elsif ($cmd eq 'DELETE' or $cmd eq 'SELECT') {
+				$reply->{value} = $raw->[1];
+			}
 		}
 	}
 

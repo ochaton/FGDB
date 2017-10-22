@@ -3,6 +3,7 @@
 #include <stdlib.h>
 #include <errno.h>
 #include <string.h>
+#include <signal.h>
 
 // network headers:
 #include <sys/types.h>
@@ -32,6 +33,8 @@
 hashmap_t * hashmap;
 queue_t * trans_queue;
 pthread_rwlock_t hashmap_lock;
+
+int channel[2];
 
 extern void operation_peek(req_t * req, hashmap_t * hashmap);
 extern void operation_select(req_t * req, hashmap_t * hashmap);
@@ -75,7 +78,7 @@ void on_request (req_t *req) {
 }
 
 static void idle_cb(EV_P_ ev_periodic *w, int revents) {
-	// fprintf(stderr, "I'm idle\n");
+	// fprintf(stderr, "Not blocked\n");
 }
 
 void * transaction_queue_worker (void * args) {
@@ -135,12 +138,12 @@ int init_hashmap (size_t max_keys) {
 int start_server() {
 	struct ev_loop *loop = ev_default_loop(0);
 
-	ev_idle idle_watcher;
-	ev_idle_init(&idle_watcher, idle_cb);
-	ev_idle_start(loop, &idle_watcher);
+	// ev_idle idle_watcher;
+	// ev_idle_init(&idle_watcher, idle_cb);
+	// ev_idle_start(loop, &idle_watcher);
 
 	struct ev_periodic every_few_seconds;
-	ev_periodic_init(&every_few_seconds, idle_cb, 0, 0.1, 0);
+	ev_periodic_init(&every_few_seconds, idle_cb, 0, 0.05, 0);
 	ev_periodic_start(EV_A_ &every_few_seconds);
 
 	ev_server server = server_init("0.0.0.0", 2016, INET);
