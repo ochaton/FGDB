@@ -22,6 +22,7 @@
 #include "server/tcp-server.h" // ev_server
 #include "server/request.h" // client request
 #include "server/proto.h" // protocol
+#include "server/staff.h"
 
 #include "lib/buddy/memory.h"
 #include "memory/hashmap.h"
@@ -86,7 +87,7 @@ void * transaction_queue_worker (void * args) {
 
 	while (1) {
 
-		transaction_t * trans = pop_queue(trans_queue);
+		transaction_t * trans = pop_queue(trans_queue, 0);
 		if (!trans) {
 			continue;
 		}

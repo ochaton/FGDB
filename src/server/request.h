@@ -1,10 +1,11 @@
 #ifndef REQUEST_H
 #define REQUEST_H
 
-#include "log.h"
-#include "tcp-server.h"
-#include "message.h"
-#include "buffer.h"
+#include "server/log.h"
+#include "server/tcp-server.h"
+#include "server/message.h"
+#include "server/buffer.h"
+#include "server/proto.h"
 
 typedef struct request req_t;
 typedef struct ev_server ev_server;
@@ -23,5 +24,6 @@ struct request {
 
 void init_request(int fd, ev_server * server);
 void destroy_request(req_t * req);
+void request_reply(req_t * req, proto_reply_t * reply);
 
 #endif // REQUEST_H

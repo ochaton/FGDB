@@ -9,6 +9,12 @@ else()
 	message(FATAL_ERROR "Could not find pthread library")
 endif()
 
+set(CMAKE_C_STANDARD 99)
+set(CMAKE_CXX_FLAGS "${CMAKE_C_FLAGS} -ggdb -Werror -Wignored-qualifiers -Winit-self\
+	-Wswitch-default -Wfloat-equal -Wshadow -Wpointer-arith \
+	-Wtype-limits -Wempty-body -Wmissing-field-initializers -Wextra \
+	-Wmissing-field-initializers -Wextra")
+
 include_directories(src/include)
 include_directories(src/)
 

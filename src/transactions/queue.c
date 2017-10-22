@@ -52,6 +52,8 @@ void destroy_queue(queue_t* queue) {
 	}
 	pthread_mutex_destroy(&queue->mutex);
 	sem_destroy(&queue->ntrans_sem);
+	heap_destroy(queue->h);
+	free(queue);
 	return;
 }
 
@@ -73,12 +75,14 @@ void push_queue(queue_t* queue, transaction_t* transaction) {
 	pthread_mutex_unlock(&queue->mutex);
 }
 
-transaction_t* pop_queue(queue_t* queue) {
+transaction_t* pop_queue(queue_t* queue, uint8_t force) {
 	uint32_t* u;
 	transaction_t* t;
 
-	// Take semaphore to know that we actually have some transactions
-	sem_wait(&queue->ntrans_sem);
+	if (!force) {
+		// Take semaphore to know that we actually have some transactions
+		sem_wait(&queue->ntrans_sem);
+	}
 
 	// Lock mutex, to avoid pushing to queue
 	pthread_mutex_lock(&queue->mutex);

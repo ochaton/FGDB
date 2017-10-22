@@ -27,7 +27,7 @@ void destroy_transaction(transaction_t*);
 void destroy_queue(queue_t*);
 
 void push_queue(queue_t*, transaction_t*);
-transaction_t* pop_queue(queue_t* queue);
+transaction_t* pop_queue(queue_t* queue, uint8_t force);
 
 
 #endif
