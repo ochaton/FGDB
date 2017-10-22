@@ -56,6 +56,7 @@ set(server_sources
 add_library(server STATIC ${server_sources})
 target_link_libraries(server
 	buddy
+	heap
 	${LIBEV_LIBRARIES}
 	${MSGPACK_LIBRARY}
 )

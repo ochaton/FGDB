@@ -3,6 +3,7 @@ project(fgdb)
 
 include_directories(src/include)
 include_directories(src/lib/buddy)
+include_directories(src/lib/heap)
 include_directories(src/server)
 include_directories(src/memory)
 
