@@ -45,6 +45,7 @@ hashmap_key_t * hashmap_insert_key(hashmap_t * hmap, hashmap_key_t * new_key, ha
 	}
 
 	memcpy(found, new_key, sizeof(*new_key));
+	hmap->used++;
 	return found;
 }
 
@@ -68,6 +69,7 @@ hashmap_key_t * hashmap_delete_key(hashmap_t * hmap, str_t * key) {
 	found->location = FREE;
 	found->fragmentated = DIRTY;
 
+	hmap->used--;
 	return found;
 }
 

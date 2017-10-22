@@ -157,6 +157,7 @@ static void parse_request(EV_P_ ev_io *w, int revents) {
 
 			msgpack_object data = (&arr)->ptr[1];
 			if (-1 == parse_data(req, &data)) {
+				req->log->error(req->log, "Fatal error while parsing data");
 				return destroy_request(req);
 			}
 
@@ -222,13 +223,13 @@ static int parse_data(req_t * req, msgpack_object * obj) {
 			msgpack_object * key = &(&obj->via.map)->ptr[0].key;
 			msgpack_object * val = &(&obj->via.map)->ptr[0].val;
 
-			if (key->type != MSGPACK_OBJECT_BIN ||
+			if (key->type != MSGPACK_OBJECT_BIN &&
 				key->type != MSGPACK_OBJECT_STR
 			) {
 				req->log->error(req->log, "Unexpected type %d in hash-key", key->type);
 				return -1;
 			}
-			if (val->type != MSGPACK_OBJECT_BIN ||
+			if (val->type != MSGPACK_OBJECT_BIN &&
 				val->type != MSGPACK_OBJECT_STR
 			) {
 				req->log->error(req->log, "Unexpected type %d in hash-val", val->type);
