@@ -3,7 +3,7 @@
 #include "HashMap.h"
 
 
-int32_t hash (str_t key,int dep) { 
+int32_t hash (str_t key,int dep) {
 // dep if parametr for change const in hash f
     int32_t mid = 0, p, m;
     switch (dep) {

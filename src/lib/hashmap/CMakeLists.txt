@@ -1,13 +1,20 @@
 cmake_minimum_required(VERSION 3.1)
 
-project(DB_struct) 
-set(SOURCE_EXE mmain.c)
+project(fgdb_hashmap)
 
-set(SOURCE_LIB_HASH_AVL AVLnode.c AVLnode_spesial.c HashMap.c hashf.c )
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O2 -Wall -Werror -Wformat-security -Wignored-qualifiers -Winit-self\
+	-Wswitch-default -Wfloat-equal -Wshadow -Wpointer-arith \
+	-Wtype-limits -Wempty-body -Wmissing-field-initializers -Wextra -pedantic \
+	-Wno-pointer-to-int-cast -Wno-int-conversion")
 
+set(CMAKE_BUILD_TYPE Release)
+set(CMAKE_C_STANDARD 99)
 
-add_library(HashMap STATIC ${SOURCE_LIB_HASH_AVL})
+set(source_lib_hash_avl
+	AVLnode.c
+	AVLnode_spesial.c
+	HashMap.c
+	hashf.c
+	)
 
-add_executable(main ${SOURCE_EXE})
-
-target_link_libraries(main HashMap)
+add_library(hashmap STATIC ${source_lib_hash_avl})
