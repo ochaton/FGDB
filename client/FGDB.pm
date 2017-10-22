@@ -1,3 +1,4 @@
+package FGDB;
 
 use 5.010;
 use strict;
@@ -77,9 +78,7 @@ sub send_message {
 		}
 	}
 
-	say Dumper($reply);
+	return $reply;
 }
 
-# send_message INSERT => { key => 'value' };
-# send_message PEEK => 'key';
-send_message SELECT => 'key';
+1;
