@@ -5,6 +5,7 @@ use warnings;
 use Socket;
 use Data::MessagePack;
 use Data::Dumper;
+use DDP;
 
 our %db = (
 	host => '127.0.0.1',
@@ -23,7 +24,7 @@ sub send_message {
 	my $cmd = shift;
 	my $message = pack "V/A*", Data::MessagePack->new->pack([ $COMMANDS{$cmd}, @_ ]);
 
-	warn $message;
+	# warn $message;
 	# warn join " ", split 2, unpack "H*", $message;
 
 	socket my $sock, PF_INET, SOCK_STREAM, getprotobyname("tcp") // die "$! $@";
@@ -41,7 +42,12 @@ sub send_message {
 	my @proto_error = qw (UNKNOWN ERROR_COMMAND);
 
 
-	my $raw = Data::MessagePack->new->unpack($buffer);
+	my $raw;
+	eval { $raw = Data::MessagePack->new->unpack($buffer); 1 } or do {
+		warn "MessagePack-unpack failed $@";
+		warn unpack "H*", $buffer;
+		return;
+	};
 	unless (ref $raw eq 'ARRAY') {
 		warn "Reply from server is not an ARRAY";
 		say Dumper($raw);
@@ -55,20 +61,24 @@ sub send_message {
 	} elsif ($reply->{code} eq 'FATAL') {
 		$reply->{fatal} = $proto_error[$raw->[1]];
 	} else {
-		unless (ref $raw->[1] eq 'HASH') {
-			warn "Expected HASH got ".ref $raw->[1];
-			say Dumper ($raw);
-			exit 1;
+		if (ref $raw->[1]) {
+			if (ref $raw->[1] ne 'HASH') {
+				warn "Expected HASH got ".ref $raw->[1];
+				say Dumper ($raw);
+				exit 1;
+			} else {
+				$reply = {
+					%$reply,
+					%{$raw->[1]},
+				};
+			}
+		} else {
+			$reply->{status} = $fgdb_code[$raw->[1]];
 		}
-
-		$reply = {
-			%$reply,
-			%{$raw->[1]},
-		};
 	}
 
 	say Dumper($reply);
 }
 
-# send_message PEEK => 'message';
 send_message INSERT => { key => 'value' };
+send_message PEEK => 'key';

@@ -63,6 +63,7 @@ void operation_insert(req_t * req, hashmap_t * hashmap) {
 		return;
 	}
 
+	req->log->debug(req->log, "Inserting new key=>value");
 
 	// Here we take memory for our value
 	arena_node_t * value = (arena_node_t *)
@@ -75,6 +76,8 @@ void operation_insert(req_t * req, hashmap_t * hashmap) {
 
 		request_reply(req, &reply);
 		return;
+	} else {
+		req->log->debug(req->log, "Arena allocated");
 	}
 
 	value->size = req->msg->val.size;
@@ -118,12 +121,11 @@ void operation_insert(req_t * req, hashmap_t * hashmap) {
 		return;
 	}
 
-	free(key_to_insert.key.ptr);
-
 	value->rev_key = inserted;
 	req->log->info(req->log, "Inserted sucessfully");
 
 	reply.code = REPLY_OK;
+	reply.cmd  = req->msg->cmd;
 	request_reply(req, &reply);
 	return;
 }
