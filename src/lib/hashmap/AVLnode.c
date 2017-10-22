@@ -11,7 +11,7 @@
 
 //prototypes of local methods
 
-void __avl_erase(avlnode_ptr node); // her we can delete page
+void __avl_erase(avlnode_ptr node); // her we can delete meta
 void __avl_calc_hight(avlnode_ptr node);
 void __avl_rebalance(avlnode_ptr *node);
 static int32_t __avl_get_hight(avlnode_ptr node);
@@ -22,13 +22,13 @@ static void __avl_LR_move(avlnode_ptr *node);
 static void __avl_RL_move(avlnode_ptr *node);
 
 // Public methods
-int32_t avl_new_node(avlnode_ptr * new_node, str_t key, void *page) {
+int32_t avl_new_node(avlnode_ptr * new_node, str_t key, void *meta) {
     (*new_node) = (avlnode_ptr) malloc(sizeof(avlnode));
     if (!(*new_node)) {
         return -1;
     }
     (*new_node)->key = key;
-    (*new_node)->page = page;
+    (*new_node)->meta = meta;
     (*new_node)->left = (*new_node)->right =(*new_node)->parent = NULL;
     return 1;
 }
@@ -104,7 +104,7 @@ int32_t avl_remove_node(avlnode_ptr *node, avlnode_ptr node_new) {
             //delete page
             //???????????
             (*node)->key = mid1->key;
-            (*node)->page = mid1->page;
+            (*node)->meta = mid1->meta;
             if (mid1 == (*node)->left) {
                 (*node)->left = mid1->left;
                 if (mid1->left) {
@@ -119,7 +119,7 @@ int32_t avl_remove_node(avlnode_ptr *node, avlnode_ptr node_new) {
                 mid1->parent->right = mid1->left;
                 mid2 = mid1->parent;
                 mid1->key.ptr = NULL;
-                mid1->page = NULL;
+                mid1->meta = NULL;
                 free(mid1);
                 while (mid2 != (*node)) {
                     __avl_calc_hight(mid2);
@@ -132,28 +132,28 @@ int32_t avl_remove_node(avlnode_ptr *node, avlnode_ptr node_new) {
         } else if ((*node)->left) {
             avlnode_ptr mid1 = (*node)->left;
             //delete key
-            //delete page
+            //delete meta
             //???????????
             (*node)->key = mid1->key;
-            (*node)->page = mid1->page;
+            (*node)->meta = mid1->meta;
             (*node)->left = mid1->left;
             (*node)->right = mid1->right;
             __avl_calc_hight(*node);
             mid1->key.ptr = NULL;
-            mid1->page = NULL;
+            mid1->meta = NULL;
             free(mid1);
         } else if ((*node)->right) {
             avlnode_ptr mid1 = (*node)->right;
             //delete key
-            //delete page
+            //delete meta
             //???????????
             (*node)->key = mid1->key;
-            (*node)->page = mid1->page;
+            (*node)->meta = mid1->meta;
             (*node)->left = mid1->left;
             (*node)->right = mid1->right;
             __avl_calc_hight(*node);
             mid1->key.ptr = NULL;
-            mid1->page = NULL;
+            mid1->meta = NULL;
             free(mid1);
         }
     }
@@ -172,7 +172,7 @@ void __avl_erase(avlnode_ptr node) {
         __avl_erase(node->right);
     }
     //delete key
-    //delete page
+    //delete meta
     //???????????
     free(node);
 }

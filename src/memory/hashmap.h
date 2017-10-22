@@ -5,6 +5,10 @@
 #include <stdint.h>
 #include "common.h"
 
+// Import fast structure to keep keys
+// uses hash-avl-tree
+// #include "lib/hashmap/HashMap.h"
+
 typedef struct {
 	str_t key;
 	void * page;

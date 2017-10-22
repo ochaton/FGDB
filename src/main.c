@@ -75,7 +75,7 @@ void on_request (req_t *req) {
 }
 
 static void idle_cb(EV_P_ ev_periodic *w, int revents) {
-	// fprintf(stderr, "I'm not blocked\n");
+	// fprintf(stderr, "I'm idle\n");
 }
 
 void * transaction_queue_worker (void * args) {
@@ -139,9 +139,9 @@ int start_server() {
 	ev_idle_init(&idle_watcher, idle_cb);
 	ev_idle_start(loop, &idle_watcher);
 
-	// struct ev_periodic every_few_seconds;
-	// ev_periodic_init(&every_few_seconds, not_blocked, 0, 1, 0);
-	// ev_periodic_start(EV_A_ &every_few_seconds);
+	struct ev_periodic every_few_seconds;
+	ev_periodic_init(&every_few_seconds, idle_cb, 0, 0.1, 0);
+	ev_periodic_start(EV_A_ &every_few_seconds);
 
 	ev_server server = server_init("0.0.0.0", 2016, INET);
 	server.on_request = on_request;

@@ -24,6 +24,10 @@ sub send_message {
 	my $cmd = shift;
 	my $message = pack "V/A*", Data::MessagePack->new->pack([ $COMMANDS{$cmd}, @_ ]);
 
+	my %request = (
+		$cmd => shift @_,
+	);
+
 	# warn $message;
 	# warn join " ", split 2, unpack "H*", $message;
 
@@ -40,7 +44,6 @@ sub send_message {
 	my @reply_code  = qw (OK ERROR FATAL);
 	my @fgdb_code   = qw (CODE_OK KEY_EXISTS KEY_NOT_FOUND);
 	my @proto_error = qw (UNKNOWN ERROR_COMMAND);
-
 
 	my $raw;
 	eval { $raw = Data::MessagePack->new->unpack($buffer); 1 } or do {
@@ -73,12 +76,26 @@ sub send_message {
 				};
 			}
 		} else {
-			$reply->{status} = $fgdb_code[$raw->[1]];
+			if ($cmd eq 'INSERT' or $cmd eq 'UPDATE' or $cmd eq 'PEEK') {
+				$reply->{status} = $fgdb_code[$raw->[1]];
+			} elsif ($cmd eq 'DELETE' or $cmd eq 'SELECT') {
+				$reply->{value} = $raw->[1];
+			}
 		}
 	}
 
-	say Dumper($reply);
+	my $dump = {
+		request => \%request,
+		reply   => $reply,
+	};
+
+	say Dumper($dump);
 }
 
 send_message INSERT => { key => 'value' };
 send_message PEEK => 'key';
+send_message PEEK => 'key';
+send_message SELECT => 'key';
+send_message DELETE => 'key';
+send_message PEEK => 'key';
+send_message SELECT => 'key';

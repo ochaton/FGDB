@@ -34,11 +34,60 @@ void operation_peek(req_t * req, hashmap_t * hashmap) {
 }
 
 void operation_select(req_t * req, hashmap_t * hashmap) {
-	destroy_request(req);
+	hashmap_key_t * key = hashmap_lookup_key(hashmap, &req->msg->key);
+	proto_reply_t reply;
+
+	if (!key) {
+		req->log->info(req->log, "Key not found");
+		reply.code = REPLY_ERROR;
+		reply.err  = KEY_NOT_FOUND;
+		reply.cmd  = req->msg->cmd;
+		request_reply(req, &reply);
+		return;
+	}
+
+	arena_node_t *value = (arena_node_t *) ((char *) key->page + key->offset);
+	req->log->info(req->log, "Key found #value=%d", value->size);
+	req->log->debug(req->log, "Value = `%s`", value->ptr);
+
+	// reply.code = REPLY_OK;
+	// reply.cmd  = req->msg->cmd;
+	// reply.val.size = value->size;
+	// reply.val.ptr = value->ptr;
+
+	reply.code = REPLY_OK;
+	reply.cmd  = req->msg->cmd;
+	reply.val.size = value->size;
+	reply.val.ptr = value->ptr;
+
+	request_reply(req, &reply);
 }
 
 void operation_delete(req_t * req, hashmap_t * hashmap) {
-	destroy_request(req);
+	hashmap_key_t * key = hashmap_lookup_key(hashmap, &req->msg->key);
+	proto_reply_t reply;
+
+	if (!key) {
+		req->log->info(req->log, "Key not found");
+		reply.code = REPLY_ERROR;
+		reply.err  = KEY_NOT_FOUND;
+		reply.cmd  = req->msg->cmd;
+		request_reply(req, &reply);
+		return;
+	}
+
+	arena_node_t *value = (arena_node_t *) ((char *) key->page + key->offset);
+	req->log->info(req->log, "#value=%d", value->size);
+
+	buddy_free(value);
+	key->location = FREE;
+
+	reply.code = REPLY_OK;
+	reply.cmd = req->msg->cmd;
+	reply.val.size = value->size;
+	reply.val.ptr = value->ptr;
+
+	request_reply(req, &reply);
 }
 
 void operation_insert(req_t * req, hashmap_t * hashmap) {
@@ -102,7 +151,7 @@ void operation_insert(req_t * req, hashmap_t * hashmap) {
 
 	// TODO: here also can be some shit
 	memcpy(key_to_insert.key.ptr, req->msg->key.ptr, key_to_insert.key.size);
-	key_to_insert.page   = &value->size;
+	key_to_insert.page   = &value->rev_key;
 	key_to_insert.offset = 0;
 	key_to_insert.location = INMEMORY;
 	key_to_insert.fragmentated = CLEAN;
