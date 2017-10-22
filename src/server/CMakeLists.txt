@@ -47,6 +47,7 @@ set(server_sources
 	buffer.c
 	log.c
 	message.c
+	queue.c
 	request.c
 	staff.c
 	tcp-server.c

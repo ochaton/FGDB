@@ -12,4 +12,6 @@ add_subdirectory(src/server)
 add_subdirectory(src/memory)
 
 add_executable(server_test src/main.c src/operations.c)
+add_executable(queue_test src/queue_test.c)
 target_link_libraries(server_test server memory)
+target_link_libraries(queue_test server)
