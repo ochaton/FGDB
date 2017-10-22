@@ -4,18 +4,18 @@
 
 #include "memory/hashmap.h"
 #include "lib/buddy/memory.h"
-#include "arena.h"
+#include "arena/arena.h"
 
 #include <errno.h>
 #include <string.h>
 
-void operation_peek(req_t * req, hashmap_t * hashmap);
-void operation_select(req_t * req, hashmap_t * hashmap);
-void operation_delete(req_t * req, hashmap_t * hashmap);
-void operation_insert(req_t * req, hashmap_t * hashmap);
-void operation_update(req_t * req, hashmap_t * hashmap);
+void operation_peek(req_t * req, hashmap_t * hashmap, arena_t * arena);
+void operation_select(req_t * req, hashmap_t * hashmap, arena_t * arena);
+void operation_delete(req_t * req, hashmap_t * hashmap, arena_t * arena);
+void operation_insert(req_t * req, hashmap_t * hashmap, arena_t * arena);
+void operation_update(req_t * req, hashmap_t * hashmap, arena_t * arena);
 
-void operation_peek(req_t * req, hashmap_t * hashmap) {
+void operation_peek(req_t * req, hashmap_t * hashmap, arena_t * arena) {
 	hashmap_key_t * key = hashmap_lookup_key(hashmap, &req->msg->key);
 	proto_reply_t reply;
 
@@ -33,7 +33,7 @@ void operation_peek(req_t * req, hashmap_t * hashmap) {
 	return;
 }
 
-void operation_select(req_t * req, hashmap_t * hashmap) {
+void operation_select(req_t * req, hashmap_t * hashmap, arena_t * arena) {
 	hashmap_key_t * key = hashmap_lookup_key(hashmap, &req->msg->key);
 	proto_reply_t reply;
 
@@ -63,7 +63,7 @@ void operation_select(req_t * req, hashmap_t * hashmap) {
 	request_reply(req, &reply);
 }
 
-void operation_delete(req_t * req, hashmap_t * hashmap) {
+void operation_delete(req_t * req, hashmap_t * hashmap, arena_t * arena) {
 	hashmap_key_t * key = hashmap_lookup_key(hashmap, &req->msg->key);
 	proto_reply_t reply;
 
@@ -79,7 +79,7 @@ void operation_delete(req_t * req, hashmap_t * hashmap) {
 	arena_node_t *value = (arena_node_t *) ((char *) key->page + key->offset);
 	req->log->info(req->log, "#value=%d", value->size);
 
-	buddy_free(value);
+	page_free(arena, value);
 	key->location = FREE;
 
 	reply.code = REPLY_OK;
@@ -90,7 +90,7 @@ void operation_delete(req_t * req, hashmap_t * hashmap) {
 	request_reply(req, &reply);
 }
 
-void operation_insert(req_t * req, hashmap_t * hashmap) {
+void operation_insert(req_t * req, hashmap_t * hashmap, arena_t * arena) {
 	hashmap_key_t * key = hashmap_lookup_key(hashmap, &req->msg->key);
 	proto_reply_t reply;
 
@@ -115,8 +115,7 @@ void operation_insert(req_t * req, hashmap_t * hashmap) {
 	req->log->debug(req->log, "Inserting new key=>value");
 
 	// Here we take memory for our value
-	arena_node_t * value = (arena_node_t *)
-		buddy_alloc(req->msg->val.size + sizeof(arena_node_t));
+	arena_node_t * value = page_alloc(arena, req->msg->val.size + sizeof(arena_node_t));
 
 	if (!value) {
 		req->log->error(req->log, "Memory not allocated for value");
@@ -151,10 +150,10 @@ void operation_insert(req_t * req, hashmap_t * hashmap) {
 
 	// TODO: here also can be some shit
 	memcpy(key_to_insert.key.ptr, req->msg->key.ptr, key_to_insert.key.size);
-	key_to_insert.page   = &value->rev_key;
-	key_to_insert.offset = 0;
+	key_to_insert.page   = align2page(value);
+	key_to_insert.offset = offsetFromPage(value);
 	key_to_insert.location = INMEMORY;
-	key_to_insert.fragmentated = CLEAN;
+	// key_to_insert.fragmentated = CLEAN;
 
 	hashmap_error_t err;
 	hashmap_key_t * inserted;
@@ -179,6 +178,6 @@ void operation_insert(req_t * req, hashmap_t * hashmap) {
 	return;
 }
 
-void operation_update(req_t * req, hashmap_t * hashmap) {
+void operation_update(req_t * req, hashmap_t * hashmap, arena_t * arena) {
 	destroy_request(req);
 }

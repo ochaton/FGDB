@@ -67,7 +67,7 @@ hashmap_key_t * hashmap_delete_key(hashmap_t * hmap, str_t * key) {
 	}
 
 	found->location = FREE;
-	found->fragmentated = DIRTY;
+	// found->fragmentated = DIRTY;
 
 	hmap->used--;
 	return found;

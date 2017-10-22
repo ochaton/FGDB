@@ -10,7 +10,7 @@ else()
 endif()
 
 set(CMAKE_C_STANDARD 99)
-set(CMAKE_CXX_FLAGS "${CMAKE_C_FLAGS} -ggdb -Werror -Wignored-qualifiers -Winit-self\
+set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -ggdb -Wignored-qualifiers -Winit-self\
 	-Wswitch-default -Wfloat-equal -Wshadow -Wpointer-arith \
 	-Wtype-limits -Wempty-body -Wmissing-field-initializers -Wextra \
 	-Wmissing-field-initializers -Wextra")
@@ -21,9 +21,10 @@ include_directories(src/)
 add_subdirectory(src/lib)
 add_subdirectory(src/server)
 add_subdirectory(src/memory)
+add_subdirectory(src/arena)
 add_subdirectory(src/transactions)
 
 add_executable(server_test src/main.c src/operations.c)
 add_executable(queue_test test/queue_test.c)
-target_link_libraries(server_test server memory transaction_queue buddy pthread)
+target_link_libraries(server_test server arena memory transaction_queue buddy pthread)
 target_link_libraries(queue_test transaction_queue request pthread)

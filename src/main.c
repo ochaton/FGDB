@@ -24,20 +24,22 @@
 #include "server/proto.h" // protocol
 #include "server/staff.h"
 
-#include "lib/buddy/memory.h"
+#include "arena/arena.h"
 #include "memory/hashmap.h"
+#include "lib/buddy/memory.h"
 
 #include "transactions/queue.h"
 
+arena_t * arena;
 hashmap_t * hashmap;
 queue_t * trans_queue;
 pthread_rwlock_t hashmap_lock;
 
-extern void operation_peek(req_t * req, hashmap_t * hashmap);
-extern void operation_select(req_t * req, hashmap_t * hashmap);
-extern void operation_delete(req_t * req, hashmap_t * hashmap);
-extern void operation_insert(req_t * req, hashmap_t * hashmap);
-extern void operation_update(req_t * req, hashmap_t * hashmap);
+extern void operation_peek(req_t * req, hashmap_t * hashmap, arena_t * arena);
+extern void operation_select(req_t * req, hashmap_t * hashmap, arena_t * arena);
+extern void operation_delete(req_t * req, hashmap_t * hashmap, arena_t * arena);
+extern void operation_insert(req_t * req, hashmap_t * hashmap, arena_t * arena);
+extern void operation_update(req_t * req, hashmap_t * hashmap, arena_t * arena);
 
 
 void on_request (req_t *req) {
@@ -45,33 +47,61 @@ void on_request (req_t *req) {
 	req->log->info(req->log, "Cmd `%s` { key = `%s` }", message_cmd_str[req->msg->cmd], req->msg->key.ptr);
 
 	switch(req->msg->cmd) {
-		case PEEK: case SELECT: case INSERT: case DELETE: case UPDATE:
+		case PEEK:
 		{
-			transaction_t * trans = convert_request(req);
-			if (!trans) {
-				proto_reply_t reply;
-				req->log->error(req->log, "Transaction not created errno=%s", strerror(errno));
-				reply.code = REPLY_FATAL;
-				reply.err  = PROTO_ERROR_UNKNOWN;
-
-				request_reply(req, &reply);
-				return;
-			}
-
-			push_queue(trans_queue, trans);
-			return;
+			operation_peek(req, hashmap, arena);
+			break;
 		}
-		default:
+		case SELECT:
 		{
-			proto_reply_t reply;
-			req->log->error(req->log, "Command %d not found", req->msg->cmd);
-			reply.code = REPLY_FATAL;
-			reply.err  = PROTO_ERROR_COMMAND;
-
-			request_reply(req, &reply);
-			return;
+			operation_select(req, hashmap, arena);
+			break;
+		}
+		case INSERT:
+		{
+			operation_insert(req, hashmap, arena);
+			break;
+		}
+		case DELETE:
+		{
+			operation_delete(req, hashmap, arena);
+			break;
+		}
+		case UPDATE:
+		{
+			operation_update(req, hashmap, arena);
+			break;
 		}
 	}
+
+	// switch(req->msg->cmd) {
+	// 	case PEEK: case SELECT: case INSERT: case DELETE: case UPDATE:
+	// 	{
+	// 		transaction_t * trans = convert_request(req);
+	// 		if (!trans) {
+	// 			proto_reply_t reply;
+	// 			req->log->error(req->log, "Transaction not created errno=%s", strerror(errno));
+	// 			reply.code = REPLY_FATAL;
+	// 			reply.err  = PROTO_ERROR_UNKNOWN;
+
+	// 			request_reply(req, &reply);
+	// 			return;
+	// 		}
+
+	// 		// push_queue(trans_queue, trans);
+	// 		return;
+	// 	}
+	// 	default:
+	// 	{
+	// 		proto_reply_t reply;
+	// 		req->log->error(req->log, "Command %d not found", req->msg->cmd);
+	// 		reply.code = REPLY_FATAL;
+	// 		reply.err  = PROTO_ERROR_COMMAND;
+
+	// 		request_reply(req, &reply);
+	// 		return;
+	// 	}
+	// }
 }
 
 static void idle_cb(EV_P_ ev_periodic *w, int revents) {
@@ -95,27 +125,27 @@ void * transaction_queue_worker (void * args) {
 		switch(trans->msg->cmd) {
 			case PEEK:
 			{
-				operation_peek(trans->ancestor, hashmap);
+				operation_peek(trans->ancestor, hashmap, arena);
 				break;
 			}
 			case SELECT:
 			{
-				operation_select(trans->ancestor, hashmap);
+				operation_select(trans->ancestor, hashmap, arena);
 				break;
 			}
 			case INSERT:
 			{
-				operation_insert(trans->ancestor, hashmap);
+				operation_insert(trans->ancestor, hashmap, arena);
 				break;
 			}
 			case DELETE:
 			{
-				operation_delete(trans->ancestor, hashmap);
+				operation_delete(trans->ancestor, hashmap, arena);
 				break;
 			}
 			case UPDATE:
 			{
-				operation_update(trans->ancestor, hashmap);
+				operation_update(trans->ancestor, hashmap, arena);
 				break;
 			}
 		}
@@ -153,10 +183,6 @@ int start_server() {
 	return EXIT_SUCCESS;
 }
 
-void init_buddy(size_t kilobytes) {
-	buddy_new(kilobytes);
-}
-
 int main(int argc, char const *argv[]) {
 	int status;
 	status = init_hashmap(1024);
@@ -164,22 +190,26 @@ int main(int argc, char const *argv[]) {
 		return status;
 	}
 
-	init_buddy(1024);
+	uint32_t killobytes = 1 << 10; // 1Mb
+	buddy_new(killobytes);
+
+	arena = arena_create(killobytes >> 3);
+
 	if (NULL == (trans_queue = init_queue())) {
 		fprintf(stderr, "Queue not allocated errno=%s\n", strerror(errno));
 		exit(EXIT_FAILURE);
 	}
 
-	pthread_t queue_worker;
-	if (pthread_create(&queue_worker, NULL, transaction_queue_worker, NULL)) {
-		fprintf(stderr, "Thread not created\n");
-		exit(EXIT_FAILURE);
-	}
+	// pthread_t queue_worker;
+	// if (pthread_create(&queue_worker, NULL, transaction_queue_worker, NULL)) {
+	// 	fprintf(stderr, "Thread not created\n");
+	// 	exit(EXIT_FAILURE);
+	// }
 
-	if (pthread_rwlock_init(&hashmap_lock, NULL)) {
-		fprintf(stderr, "Creation of rwlock failed\n");
-		exit(EXIT_FAILURE);
-	}
+	// if (pthread_rwlock_init(&hashmap_lock, NULL)) {
+	// 	fprintf(stderr, "Creation of rwlock failed\n");
+	// 	exit(EXIT_FAILURE);
+	// }
 
 	start_server();
 }

@@ -14,7 +14,7 @@ typedef struct {
 	void * page;
 	uint32_t offset;
 	enum { FREE, INMEMORY, OUTMEMORY } location;
-	enum { CLEAN, DIRTY } fragmentated;
+	// enum { CLEAN, DIRTY } fragmentated;
 } hashmap_key_t;
 
 typedef struct {
