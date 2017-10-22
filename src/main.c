@@ -19,13 +19,13 @@
 #include <ev.h>
 
 // project-staff:
-#include "tcp-server.h" // ev_server
-#include "request.h" // client request
-#include "proto.h" // protocol
+#include "server/tcp-server.h" // ev_server
+#include "server/request.h" // client request
+#include "server/proto.h" // protocol
 
-#include "memory.h"
+#include "lib/buddy/memory.h"
 
-#include "hashmap.h"
+#include "memory/hashmap.h"
 
 hashmap_t * hashmap;
 

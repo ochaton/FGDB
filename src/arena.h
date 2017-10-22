@@ -2,7 +2,7 @@
 #define ARENA_H
 
 #include "common.h"
-#include "hashmap.h"
+#include "memory/hashmap.h"
 
 typedef struct{
 	hashmap_key_t * rev_key; // reverse pointer to key

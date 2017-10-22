@@ -1,18 +1,12 @@
 #include "queue.h"
-#include "heap.h"
-#include "message.h"
+#include "lib/heap/heap.h"
 #include <unistd.h>
 #include <stdlib.h>
 
 transaction_t* convert_request(req_t* req) {
 	transaction_t* ret_trans = malloc(sizeof(transaction_t));
 	ret_trans->ancestor = req;
-
-	msg_t* msg = (msg_t*) malloc(sizeof(msg_t));
-	msg->cmd = req->msg->cmd;
-	message_set(&(msg->key), req->msg->key.ptr, req->msg->key.size);
-	message_set(&(msg->val), req->msg->val.ptr, req->msg->val.size);
-	ret_trans->msg = msg;
+	ret_trans->msg = req->msg;
 	return ret_trans;
 }
 
@@ -26,7 +20,6 @@ queue_t* init_queue(void) {
 
 void destroy_transaction(transaction_t* transaction) {
 	if (transaction) {
-		destroy_message(transaction->msg);
 		free(transaction);
 	}
 	return;
@@ -44,7 +37,7 @@ void destroy_queue(queue_t* queue) {
 void push_queue(queue_t* queue, transaction_t* transaction) {
 	heap_insert(
 		queue->h,
-		&(transaction->msg->cmd),
+		&transaction->msg->cmd,
 		transaction
 	);
 }

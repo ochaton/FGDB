@@ -1,9 +1,9 @@
 #ifndef QUEUE_H
 #define QUEUE_H
 
-#include "message.h"
-#include "request.h"
-#include "heap.h"
+#include "server/message.h"
+#include "server/request.h"
+#include "lib/heap/heap.h"
 
 typedef struct {
 	req_t* ancestor;

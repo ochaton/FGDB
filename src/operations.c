@@ -1,9 +1,9 @@
 #include "common.h"
-#include "request.h"
-#include "proto.h"
+#include "server/request.h"
+#include "server/proto.h"
 
-#include "hashmap.h"
-#include "memory.h"
+#include "memory/hashmap.h"
+#include "lib/buddy/memory.h"
 #include "arena.h"
 
 #include <errno.h>

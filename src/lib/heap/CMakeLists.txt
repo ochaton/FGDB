@@ -9,5 +9,4 @@ set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O2 -Wall -Werror -Wformat-security -Wig
 set(CMAKE_BUILD_TYPE Release)
 set(CMAKE_C_STANDARD 99)
 
-include_directories(include)
 add_library(heap STATIC heap.c)

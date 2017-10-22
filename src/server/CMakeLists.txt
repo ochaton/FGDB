@@ -43,21 +43,26 @@ set(CMAKE_CXX_FLAGS "${CMAKE_C_FLAGS} -ggdb -Werror -Wignored-qualifiers -Winit-
 	-Wmissing-field-initializers -Wextra")
 
 include_directories(${LIBEV_INCLUDE_DIR} ${MSGPACK_INCLUDE_DIR} ${CMAKE_CURRENT_SOURCE_DIR})
-set(server_sources
-	buffer.c
-	log.c
-	message.c
-	queue.c
+set(request_sources
 	request.c
 	staff.c
-	tcp-server.c
+	log.c
 	proto.c
+	buffer.c
+	message.c
+	)
+
+set(server_sources
+	staff.c
+	tcp-server.c
 	)
 
 add_library(server STATIC ${server_sources})
-target_link_libraries(server
-	buddy
-	heap
+add_library(request STATIC ${request_sources})
+
+target_link_libraries(request
 	${LIBEV_LIBRARIES}
 	${MSGPACK_LIBRARY}
-)
+	)
+
+target_link_libraries(server request)
