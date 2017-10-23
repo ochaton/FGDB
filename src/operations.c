@@ -46,7 +46,7 @@ void operation_select(req_t * req, hashmap_t * hashmap, arena_t * arena) {
 		return;
 	}
 
-	arena_node_t *value = (arena_node_t *) ((char *) key->page + key->offset);
+	arena_node_t *value = key->node;
 	req->log->info(req->log, "Key found #value=%d", value->size);
 	req->log->debug(req->log, "Value = `%s`", value->ptr);
 
@@ -76,10 +76,10 @@ void operation_delete(req_t * req, hashmap_t * hashmap, arena_t * arena) {
 		return;
 	}
 
-	arena_node_t *value = (arena_node_t *) ((char *) key->page + key->offset);
+	arena_node_t *value = key->node;
 	req->log->info(req->log, "#value=%d", value->size);
 
-	page_free(arena, value);
+	page_node_free(arena, value);
 	key->location = FREE;
 
 	reply.code = REPLY_OK;
@@ -115,7 +115,7 @@ void operation_insert(req_t * req, hashmap_t * hashmap, arena_t * arena) {
 	req->log->debug(req->log, "Inserting new key=>value");
 
 	// Here we take memory for our value
-	arena_node_t * value = page_alloc(arena, req->msg->val.size + sizeof(arena_node_t));
+	arena_node_t * value = page_node_alloc(arena, req->msg->val.size);
 
 	if (!value) {
 		req->log->error(req->log, "Memory not allocated for value");
@@ -139,7 +139,7 @@ void operation_insert(req_t * req, hashmap_t * hashmap, arena_t * arena) {
 
 	if (!key_to_insert.key.ptr) {
 		req->log->error(req->log, "Memory not allocated for key errno=%s", strerror(errno));
-		buddy_free(value);
+		page_node_free(arena, value);
 
 		reply.code  = REPLY_FATAL;
 		reply.fatal = PROTO_ERROR_UNKNOWN;
@@ -150,8 +150,7 @@ void operation_insert(req_t * req, hashmap_t * hashmap, arena_t * arena) {
 
 	// TODO: here also can be some shit
 	memcpy(key_to_insert.key.ptr, req->msg->key.ptr, key_to_insert.key.size);
-	key_to_insert.page   = align2page(value);
-	key_to_insert.offset = offsetFromPage(value);
+	key_to_insert.node = value;
 	key_to_insert.location = INMEMORY;
 	// key_to_insert.fragmentated = CLEAN;
 
@@ -160,7 +159,7 @@ void operation_insert(req_t * req, hashmap_t * hashmap, arena_t * arena) {
 	if (NULL == (inserted = hashmap_insert_key(hashmap, &key_to_insert, &err))) {
 		req->log->error(req->log, "Insert to hashmap error: %s", hashmap_error[err]);
 		free(key_to_insert.key.ptr);
-		buddy_free(value);
+		page_node_free(arena, value);
 
 		reply.code  = REPLY_FATAL;
 		reply.fatal = PROTO_ERROR_UNKNOWN;

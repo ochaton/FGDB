@@ -1,17 +1,18 @@
 #include "arena.h"
 #include "lib/buddy/memory.h"
 #include <assert.h>
+#include <stddef.h>
 
-static uint32_t blog (uint32_t num) {
-	uint32_t rv = 0; for (; num >> rv; rv++);
-	return (uint32_t) (1 << (rv - 1)) == num ? rv - 1 : rv;
-}
 
 arena_t * arena_create(uint32_t pages) {
 	uint32_t bytes = pages * PAGE_SIZE + sizeof(arena_t);
-	arena_t * arena = buddy_alloc(bytes);
+	char * mem_ptr = buddy_alloc(bytes);
 
-	assert(arena);
+	assert(mem_ptr);
+
+	mem_ptr = (char *) (((uint64_t) mem_ptr + PAGE_SIZE) & ~(PAGE_SIZE - 1));
+
+	arena_t * arena = (arena_t *) mem_ptr;
 
 	arena->allocated_bytes = pages * sizeof(arena_page_t);
 	arena->used_bytes      = 0;
@@ -19,35 +20,38 @@ arena_t * arena_create(uint32_t pages) {
 	arena->fragmentated_bytes = 0;
 	arena->npages = pages;
 
-	// allign by PAGE_SIZE
-	uint64_t ptr = (uint64_t) &arena->pages;
-	uint64_t bindegree = blog(PAGE_SIZE);
-	ptr >>= bindegree;
-	ptr += 1;
-	ptr <<= bindegree;
-
-	arena->pages = (arena_page_t *) ptr;
-
-	for (uint32_t i = 0; i < pages; i++) {
-		arena_page_t page = arena->pages[i];
-		page.header.fragmentated = CLEAN;
-		page.header.total = PAGE_SIZE;
-		page.header.used  = 0;
+	for (uint32_t i = 0; i < arena->npages; i++) {
+		arena_page_t * page = &arena->pages[i];
+		page->header.end = (char *) &page->header + sizeof(page->header);
+		// page->header.lru_lsn = 0;
+		page->header.used = 0;
+		page->header.fragmentated = 0;
+		page->header.tail = PAGE_SIZE - sizeof(page->header);
+		page->header.nodes = 0;
+		page->header.lock = UNLOCKED_PAGE;
 	}
 
 	return arena;
 }
 
-arena_node_t * page_alloc(arena_t * arena, size_t bytes) {
+arena_node_t * page_node_alloc(arena_t * arena, size_t bytes) {
+
+	bytes += sizeof(arena_node_t); // overhead
+
 	for (uint32_t i = 0; i < arena->npages; i++) {
-		arena_page_t page = arena->pages[i];
-		if (page.header.total - page.header.used > bytes) {
+		arena_page_t * page = &arena->pages[i];
+		if (page->header.tail > bytes) {
 
-			arena_node_t * node = (arena_node_t *) &page.data[0] + page.header.used;
+			arena_node_t * node = (arena_node_t *) page->header.end;
+			node->state = USED_NODE;
 
-			page.header.used    += sizeof(*node) + bytes;
+			page->header.end  += bytes;
+			page->header.used += bytes;
+			page->header.tail -= bytes;
 
-			arena->used_bytes   += bytes;
+			page->header.nodes++;
+
+			arena->used_bytes += bytes;
 
 			return node;
 		}
@@ -56,16 +60,32 @@ arena_node_t * page_alloc(arena_t * arena, size_t bytes) {
 	return NULL;
 }
 
-void page_free(arena_t * arena, arena_node_t * node) {
+void page_node_free(arena_t * arena, arena_node_t * node) {
 	arena_page_t * page = align2page(node);
-	page->header.fragmentated = DIRTY;
+
+	page->header.nodes--;
+
+	register uint32_t add_fragmentated = 0;
+
+	// If this is last taken node in page:
+	if (&node->ptr[0] + node->size == page->header.end) {
+
+		// Move end of page back at the beginning on node
+		page->header.end = (char *) node;
+		node->state = FREE_NODE;
+	} else {
+		page->header.fragmentated += add_fragmentated = sizeof(*node) + node->size;
+		node->state = DIRTY_NODE;
+		node->rev_key = NULL;
+	}
+
 	arena->used_bytes -= node->size;
-	arena->fragmentated_bytes += node->size;
+	arena->fragmentated_bytes += add_fragmentated;
 }
 
 inline arena_page_t * align2page(arena_node_t * node) {
 	arena_node_t * _node = (arena_node_t *) node;
-	return (arena_page_t *) ((uint32_t) ((void *) node) / PAGE_SIZE);
+	return (arena_page_t *) ((~(PAGE_SIZE - 1) & (uint64_t) _node) + offsetof(arena_t, pages));
 }
 
 inline uint64_t offsetFromPage (arena_node_t * node) {

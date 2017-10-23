@@ -4,15 +4,17 @@
 #include <stddef.h>
 #include <stdint.h>
 #include "common.h"
+#include "arena/arena.h"
 
 // Import fast structure to keep keys
 // uses hash-avl-tree
 // #include "lib/hashmap/HashMap.h"
 
-typedef struct {
+typedef struct arena_node arena_node_t;
+
+typedef struct hashmap_key {
 	str_t key;
-	void * page;
-	uint32_t offset;
+	arena_node_t * node;
 	enum { FREE, INMEMORY, OUTMEMORY } location;
 	// enum { CLEAN, DIRTY } fragmentated;
 } hashmap_key_t;
