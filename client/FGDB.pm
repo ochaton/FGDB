@@ -6,7 +6,6 @@ use warnings;
 use Socket;
 use Data::MessagePack;
 use Data::Dumper;
-use DDP;
 
 use constant DEBUG => 0;
 

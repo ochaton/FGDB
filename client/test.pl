@@ -8,7 +8,7 @@ use Test::More;
 use FGDB;
 use Data::Dumper;
 
-use constant KEYS_AMOUNT => 5;
+use constant KEYS_AMOUNT => 3;
 
 sub req {
 	my %params = @_;
