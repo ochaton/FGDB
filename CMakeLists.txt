@@ -28,3 +28,7 @@ add_executable(server_test src/main.c src/operations.c)
 add_executable(queue_test test/queue_test.c)
 target_link_libraries(server_test server arena memory transaction_queue buddy pthread)
 target_link_libraries(queue_test transaction_queue request pthread)
+
+# enable_testing()
+# add_test(NAME perl_test_server
+# 	COMMAND make -C "${CMAKE_CURRENT_SOURCE_DIR}/client")

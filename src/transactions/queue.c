@@ -39,6 +39,7 @@ queue_t* init_queue(void) {
 
 void destroy_transaction(transaction_t* transaction) {
 	if (transaction) {
+		destroy_message(transaction->msg);
 		free(transaction);
 	}
 	return;
@@ -53,6 +54,7 @@ void destroy_queue(queue_t* queue) {
 	pthread_mutex_destroy(&queue->mutex);
 	sem_destroy(&queue->ntrans_sem);
 	heap_destroy(queue->h);
+	free(queue->h);
 	free(queue);
 	return;
 }
