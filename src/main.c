@@ -143,7 +143,7 @@ int start_server() {
 	// ev_idle_start(loop, &idle_watcher);
 
 	struct ev_periodic every_few_seconds;
-	ev_periodic_init(&every_few_seconds, idle_cb, 0, 0.05, 0);
+	ev_periodic_init(&every_few_seconds, idle_cb, 0, 0.01, 0);
 	ev_periodic_start(EV_A_ &every_few_seconds);
 
 	ev_server server = server_init("0.0.0.0", 2016, INET);

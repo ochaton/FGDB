@@ -4,6 +4,7 @@ use warnings;
 
 $|++;
 
+use Test::More;
 use FGDB;
 use Data::Dumper;
 
@@ -15,78 +16,75 @@ sub req {
 }
 
 sub do_inserts {
-	my $warn_check = shift;
-	for my $i (1..KEYS_AMOUNT()) {
+	my $check = shift;
+	for my $i (1..KEYS_AMOUNT) {
 		my $response = req(INSERT => { "key$i" => "value$i" });
-		warn ("NOT_OK FOR 'INSERT key$i => value$i'\n" . Dumper($response)) unless $warn_check->($response);
+		$check->($response);
 	}
 }
 
 sub do_peeks {
-	my $warn_check = shift;
-	for my $i (1..KEYS_AMOUNT()) {
+	for my $i (1..KEYS_AMOUNT) {
 		my $response = req(PEEK => "key$i");
-		warn ("NOT_OK FOR 'PEEK key$i'\n" . Dumper($response)) unless $warn_check->($response);
+		is($response->{code}, 'ERROR');
+		is($response->{error}, 'KEY_NOT_FOUND');
 	}
 }
 
 sub do_deletes {
-	my $warn_check = shift;
-	for my $i (1..KEYS_AMOUNT()) {
+	my ($check) = @_;
+	for my $i (1..KEYS_AMOUNT) {
 		my $response = req(DELETE => "key$i");
-		warn ("NOT_OK FOR 'DELETE key$i'\n" . Dumper($response)) unless $warn_check->($response);
+		$check->($response, "value$i");
 	}
 }
 
 sub do_selects {
-	my $warn_check = shift;
-	my $correct_answers = shift;
-	for my $i (1..KEYS_AMOUNT()) {
+	my $check = shift;
+	for my $i (1..KEYS_AMOUNT) {
 		my $response = req(SELECT => "key$i");
-		warn ("NOT_OK FOR 'SELECT key$i'\n" . Dumper($response)) unless $warn_check->($response);
-		warn "INCORRECT ANSWER FOR 'SELECT key$i'\n" unless $response->{value} eq $correct_answers->[1]->{"key$i"};
+		$check->($response, "value$i");
 	}
 }
 
 sub main {
 	my $answers = [];
-	map { $answers->[$_] = { "key$_" => "value$_" } } (1..KEYS_AMOUNT());
-	do_peeks(
-		sub {
-			return ($_[0]->{error} // '') eq 'KEY_NOT_FOUND';
-		}
-	);
-	print("PEEKS DONE------------\n");
+	map { $answers->[$_] = { "key$_" => "value$_" } } (1..KEYS_AMOUNT);
+	do_peeks();
+	diag("PEEKS DONE------------");
+	do_inserts(sub {
+		is($_[0]->{code}, 'OK');
+		is($_[0]->{status}, 'CODE_OK');
+	});
 	do_inserts(
 		sub {
-			return ($_[0]->{status} // '') eq 'CODE_OK';
+			is($_[0]->{code}, 'ERROR');
+			is($_[0]->{error}, 'KEY_EXISTS');
 		}
 	);
-	do_inserts(
-		sub {
-			return ($_[0]->{error} // '') eq 'KEY_EXISTS';
-		}
-	);
-	print("INSERTS DONE----------\n");
+	diag("INSERTS DONE----------");
 	do_deletes(
 		sub {
-			return ($_[0]->{status} // '') eq 'CODE_OK';
-		}
+			is($_[0]->{code}, 'OK');
+			is($_[0]->{value}, $_[1]);
+		},
 	);
-	print("DELETES DONE----------\n");
+	diag("DELETES DONE----------");
 	do_inserts(
 		sub {
-			return ($_[0]->{status} // '') eq 'CODE_OK';
+			is($_[0]->{code}, 'OK');
+			is($_[0]->{status}, 'CODE_OK');
 		}
 	);
-	print("INSERTS DONE----------\n");
+	diag("INSERTS DONE----------");
 	do_selects(
 		sub {
-			return ($_[0]->{status} // '') eq 'CODE_OK';
+			is($_[0]->{code}, 'OK');
+			is($_[0]->{value}, $_[1]);
 		},
-		$answers
 	);
-	print("DONE TESTING\n");
 }
 
 main();
+
+done_testing;

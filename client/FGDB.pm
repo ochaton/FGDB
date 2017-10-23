@@ -8,6 +8,8 @@ use Data::MessagePack;
 use Data::Dumper;
 use DDP;
 
+use constant DEBUG => 0;
+
 our %db = (
 	host => '127.0.0.1',
 	port => 2016,
@@ -29,14 +31,14 @@ sub send_message {
 	# warn join " ", split 2, unpack "H*", $message;
 
 	socket my $sock, PF_INET, SOCK_STREAM, getprotobyname("tcp") // die "$! $@";
-	say "Socket created";
+	warn "Socket created" if DEBUG > 1;
 	connect $sock, sockaddr_in($db{port}, inet_aton $db{host}) // die "$! $@";
-	say "Connected to $db{host}:$db{port}";
+	warn "Connected to $db{host}:$db{port}" if DEBUG > 1;
 	my $bytes = send ($sock, $message, 0) // die "$! $@";
-	say "Sended $bytes bytes";
+	warn "Sended $bytes bytes" if DEBUG > 1;
 
 	recv ($sock, my $buffer, 4096, 0) // die "$! $@";
-	say "Got from socket: " .(length $buffer);
+	warn "Got from socket: " .(length $buffer) if DEBUG > 1;
 
 	my @reply_code  = qw (OK ERROR FATAL);
 	my @fgdb_code   = qw (CODE_OK KEY_EXISTS KEY_NOT_FOUND);
