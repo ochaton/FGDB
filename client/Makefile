@@ -10,8 +10,7 @@ test: libs
 	perl -Ilibs/lib/perl5/ -Ilibs/lib/perl5/x86_64-linux-thread-multi/auto/ test.pl
 
 libs: cpanm
-	mkdir -p $PWD/libs
-	./cpanm --local-lib=./libs Test::More
+	./cpanm --local-lib=./libs Test::More FindBin Data::MessagePack
 
 cpanm:
 	curl -L https://cpanmin.us/ -o cpanm

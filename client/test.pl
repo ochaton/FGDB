@@ -5,6 +5,10 @@ use warnings;
 $|++;
 
 use Test::More;
+use FindBin;
+
+use lib $FindBin::Bin . '/./';
+
 use FGDB;
 use Data::Dumper;
 
