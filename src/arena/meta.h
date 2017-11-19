@@ -35,7 +35,6 @@ typedef struct {
 	enum { PAGE_FREE, PAGE_INMEMORY, PAGE_INDISK } location:8;
 } page_header_t;
 
-
 enum { PAGE_SIZE = 4096 };
 typedef char arena_page_t[PAGE_SIZE];
 
