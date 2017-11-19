@@ -1,0 +1,4 @@
+[submodule "src/lib/hashmap"]
+	path = src/lib/hashmap
+	url = https://github.com/pansershrek/DBCourse_struct.git
+	branch = master
