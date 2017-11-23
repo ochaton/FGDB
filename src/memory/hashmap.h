@@ -7,14 +7,12 @@
 
 // Import fast structure to keep keys
 // uses hash-avl-tree
-// #include "lib/hashmap/HashMap.h"
 
-typedef struct {
+// #include "lib/hashmap/HashMap.h"
+typedef struct hashmap_key {
 	str_t key;
-	void * page;
+	page_id_t page;
 	uint32_t offset;
-	enum { FREE, INMEMORY, OUTMEMORY } location;
-	enum { CLEAN, DIRTY } fragmentated;
 } hashmap_key_t;
 
 typedef struct {
