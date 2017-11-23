@@ -12,7 +12,7 @@
 typedef struct hashmap_key {
 	str_t key;
 	page_id_t page;
-	uint32_t offset;
+	uint16_t * offset;
 } hashmap_key_t;
 
 typedef struct {

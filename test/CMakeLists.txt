@@ -14,12 +14,12 @@ set(arena_sources
 	../src/arena/arena.c
 	../src/arena/manager.c)
 
-# set(disk_sources
-# 	../src/arena/disk.c)
+set(disk_sources
+	../src/arena/disk.c)
 
 add_library(arena STATIC ${arena_sources})
-# add_library(disk STATIC ${disk_sources})
+add_library(disk STATIC ${disk_sources})
 
 add_executable(fgdb_test fgdb.c)
-target_link_libraries(fgdb_test arena buddy vector)
+target_link_libraries(fgdb_test arena disk buddy vector)
 # target_link_libraries(fgdb_test arena disk buddy)

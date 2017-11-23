@@ -17,7 +17,6 @@ arena_t * new_arena(size_t pages) {
 
 	register char * alligned = (char *) (((uint64_t) mem_ptr + PAGE_SIZE) & ~((uint64_t) PAGE_SIZE - 1));
 	arena->pages = alligned;
-	// *((char **) &arena->pages = ;
 
 	arena->allocated_pages = pages;
 	arena->uploaded_pages = 0;
@@ -31,13 +30,13 @@ void destroy_arena(arena_t * arena) {
 	return;
 }
 
-// arena_page_id_t arena_get_next_page() {
-// 	if (arena->allocated_pages > arena->uploaded_pages) {
-// 		return arena->uploaded_pages++;
-// 	}
+arena_page_id_t arena_get_next_page(void) {
+	if (arena->allocated_pages > arena->uploaded_pages) {
+		return arena->uploaded_pages++;
+	}
 
-// 	// call lru_cache
-// }
+	// call lru_cache
+}
 
 void arena_page_touch(arena_page_id_t page_id) {
 	// Call to LRU:

@@ -55,7 +55,7 @@ void disk_upload_page(disk_t *disk, uint32_t disk_page_idx, uint32_t arena_idx) 
 	return;
 }
 
-void disk_dump_page(disk_t *disk, uint32_t page_idx, uint32_t arena_idx) {
+void disk_dump_page(uint32_t page_idx, uint32_t arena_idx) {
 	off_t page_pos = disk->arena_start + page_idx * PAGE_SIZE;
 
 	lseek(disk->fd, page_pos, SEEK_SET);

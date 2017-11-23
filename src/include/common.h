@@ -27,7 +27,7 @@ typedef struct {
 #include "memory/hashmap.h"
 
 extern struct arena *arena;
-// extern disk_t  *disk;
+extern struct disk  *disk;
 // extern hashmap_t *hashmap;
 
 #endif // COMMON_H

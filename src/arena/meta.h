@@ -29,6 +29,7 @@ typedef struct {
 
 	struct vector *keys;
 
+	page_id_t page_id;
 	arena_page_id_t arena_id;
 	enum { PAGE_DIRTY, PAGE_CLEAN } state:8;
 	enum { PAGE_FREE, PAGE_INMEMORY, PAGE_INDISK } location:8;
@@ -49,7 +50,7 @@ typedef struct arena {
 
 arena_t * new_arena(size_t pages);
 void destroy_arena(arena_t * arena);
-page_id_t arena_get_next_page(arena_t * arena);
+arena_page_id_t arena_get_next_page(void);
 void arena_defragmentate_page(arena_page_id_t page_id, page_header_t * header);
 
 typedef struct hashmap_key hashmap_key_t;
@@ -57,8 +58,9 @@ typedef struct hashmap_key hashmap_key_t;
 page_headers_vector_t * init_headers(size_t pages);
 void destroy_headers(void);
 page_header_t * headers_new_page(void);
+page_header_t * headers_alloc_page(size_t value_size);
 page_header_t * page_value_set(str_t * value, hashmap_key_t * key);
-str_t * page_value_get(page_id_t page_id, off_t offset);
+str_t * page_value_get(hashmap_key_t * key);
 
 
 #endif //FGDB_META_PAGES_H

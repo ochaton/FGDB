@@ -5,7 +5,7 @@
 #include <stdint.h>
 #include <sys/types.h>
 
-typedef struct {
+typedef struct disk {
 	char * path;
 
 	off_t arena_start;
@@ -20,7 +20,7 @@ typedef struct {
 disk_t * init_disk(char * path);
 void destroy_disk(disk_t * disk);
 void disk_upload_page(disk_t *disk, uint32_t disk_page_idx, uint32_t arena_idx);
-void disk_dump_page(disk_t *disk, uint32_t page_idx, uint32_t arena_idx);
+void disk_dump_page(uint32_t page_idx, uint32_t arena_idx);
 void disk_new_page(disk_t * disk);
 
 
