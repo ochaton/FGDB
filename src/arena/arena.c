@@ -16,7 +16,7 @@ arena_t * new_arena(size_t pages) {
 	assert(mem_ptr);
 
 	register char * alligned = (char *) (((uint64_t) mem_ptr + PAGE_SIZE) & ~((uint64_t) PAGE_SIZE - 1));
-	arena->pages = alligned;
+	arena->pages = (arena_page_t *) alligned;
 
 	arena->allocated_pages = pages;
 	arena->uploaded_pages = 0;
@@ -47,16 +47,18 @@ void arena_defragmentate_page(arena_page_id_t page_id, page_header_t * header) {
 	arena_page_t * page = &arena->pages[page_id];
 	off_t offset = 0;
 	for (int block_id = 0; block_id < header->keys->total; block_id++) {
-		page_header_key_t * rev_key = (page_header_key_t *) header->keys->items[block_id];
-		str_t * value = (str_t *) &page[rev_key->offset];
-		memmove(&page[rev_key->offset], &page[offset], value->size);
+		page_header_key_t * key = VECTOR_GET(header->keys[0], page_header_key_t *, block_id);
+		str_t * value = (str_t *) &page[key->offset];
+		memmove(&page[key->offset], &page[offset], value->size);
 
-		rev_key->offset = offset;
+		key->offset = offset;
 		offset += value->size;
 	}
 
 	header->fragmentated_bytes = 0;
 	header->tail_bytes = offset;
 	header->state = PAGE_DIRTY;
+
+	memset((char *) page + header->tail_bytes, 0, PAGE_SIZE - header->tail_bytes);
 	// TODO: unlock page
 }

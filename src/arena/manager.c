@@ -31,12 +31,13 @@ void destroy_headers(void) {
 }
 
 void destroy_header(page_header_t * header) {
+	if (header->state == PAGE_DIRTY) {
+		arena_defragmentate_page(header->arena_id, header);
+		disk_dump_page(header->page_id, header->arena_id);
+	}
+
 	// Destroy reverse keys:
 	for (size_t i = 0; i < header->keys->total; i++) {
-		if (header->state == PAGE_DIRTY) {
-			arena_defragmentate_page(header->arena_id, header);
-			disk_dump_page(header->page_id, header->arena_id);
-		}
 		free(header->keys->items[i]);
 	}
 
@@ -93,15 +94,12 @@ page_header_t * headers_alloc_page(size_t value_size) {
 }
 
 page_header_key_t * headers_push_key(page_header_t * header, hashmap_key_t * key, off_t page_offset) {
-	page_header_key_t * key_reverse = (page_header_key_t *) malloc(sizeof(page_header_key_t));
-	if (!key_reverse) {
-		return NULL;
-	}
-	key_reverse->key = key;
-	key_reverse->offset = page_offset;
+	page_header_key_t * page_key = (page_header_key_t *) malloc(sizeof(page_header_key_t));
+	page_key->offset = page_offset;
 
-	vector_add(header->keys, key_reverse);
-	return key_reverse;
+	vector_add(header->keys, page_key);
+	key->header_key_id = header->keys->total - 1; // last one
+	return page_key;
 }
 
 // Returns offset in page
@@ -111,12 +109,12 @@ page_header_t * page_value_set(str_t * value, hashmap_key_t * key) {
 
 	size_t offset = PAGE_SIZE - header->tail_bytes;
 	page_header_key_t * arena_header_key = headers_push_key(header, key, offset);
-	key->offset = &arena_header_key->offset;
 	key->page   = header->arena_id;
 
-	memcpy(page[offset], &value->size, sizeof(value->size));
-	offset += sizeof(value->size);
-	memcpy((char *) page + offset, value->ptr, value->size);
+	char * ptr = (char *) page + offset;
+	*(typeof(value->size) *) ptr = value->size;
+	ptr += sizeof(value->size);
+	memcpy(ptr, value->ptr, value->size);
 
 	header->tail_bytes -= value->size;
 	// header->lsn = get_lsn();
@@ -124,8 +122,7 @@ page_header_t * page_value_set(str_t * value, hashmap_key_t * key) {
 	return header;
 }
 
-str_t * page_value_get(hashmap_key_t * key) {
-	str_t * retval = malloc(sizeof(str_t));
+page_header_t * page_value_get(hashmap_key_t * key, str_t * retval) {
 	page_header_t * header = arena->headers->items[ key->page ];
 
 	if (header->location == PAGE_INDISK) {
@@ -134,12 +131,47 @@ str_t * page_value_get(hashmap_key_t * key) {
 	}
 
 	if (header->location == PAGE_INMEMORY) {
-		char * value = arena->pages[ header->arena_id ] + *key->offset;
+
+		arena_page_t * page = (arena_page_t *) arena->pages[ header->arena_id ];
+		page_header_key_t * header_key = VECTOR_GET(header->keys[0], page_header_key_t*, key->header_key_id);
+
+		if (NULL == header_key) {
+			return NULL;
+		}
+
+		char * value = (char *) page + header_key->offset;
 
 		retval->size = *(typeof(retval->size) *) value;
 		retval->ptr = value + sizeof(retval->size);
 
-		return retval;
+		return header;
+	}
+
+	return NULL;
+}
+
+page_header_t * page_value_unset(hashmap_key_t * key, str_t * value) {
+	page_header_t * header = arena->headers->items[ key->page ];
+
+	if (header->location == PAGE_INDISK) {
+		header->arena_id = heat_page(header->page_id);
+		header->location = PAGE_INMEMORY;
+	}
+
+	if (header->location == PAGE_INMEMORY) {
+		arena_page_t * page = &arena->pages[ header->arena_id ];
+		page_header_key_t * header_key = (page_header_key_t *) VECTOR_GET(header->keys[0], page_header_key_t*, key->header_key_id);
+
+		vector_delete(header->keys, key->header_key_id);
+
+		value->size = *(typeof(value->size) *) &page[ header_key->offset ];
+		value->ptr  = (char *) &page[ header_key->offset ] + sizeof(typeof(value->size));
+
+		free(header_key);
+
+		header->state = PAGE_DIRTY;
+
+		return header;
 	}
 
 	return NULL;

@@ -8,8 +8,8 @@
 #include "lib/vector/vector.h"
 #include "common.h"
 
-typedef struct {
-	hashmap_key_t * key;
+typedef struct page_header {
+	// hashmap_key_t * key;
 	uint16_t offset;
 } page_header_key_t;
 
@@ -60,7 +60,8 @@ void destroy_headers(void);
 page_header_t * headers_new_page(void);
 page_header_t * headers_alloc_page(size_t value_size);
 page_header_t * page_value_set(str_t * value, hashmap_key_t * key);
-str_t * page_value_get(hashmap_key_t * key);
+page_header_t * page_value_get(hashmap_key_t * key, str_t * retval);
+page_header_t * page_value_unset(hashmap_key_t * key, str_t * value);
 
 
 #endif //FGDB_META_PAGES_H
