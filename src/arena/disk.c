@@ -59,9 +59,9 @@ void disk_dump_page(uint32_t page_idx, uint32_t arena_idx) {
 	off_t page_pos = disk->arena_start + page_idx * PAGE_SIZE;
 
 	lseek(disk->fd, page_pos, SEEK_SET);
-	int bytes, to_write = PAGE_SIZE, writed = 0;
+	int bytes, to_write = PAGE_SIZE, written = 0;
 	while(to_write) {
-		bytes = write(disk->fd, &arena->pages[arena_idx] + writed, to_write);
+		bytes = write(disk->fd, &arena->pages[arena_idx] + written, to_write);
 		if (-1 == bytes) {
 			if (errno == EAGAIN || errno == EINTR) {
 			} else {
@@ -69,7 +69,7 @@ void disk_dump_page(uint32_t page_idx, uint32_t arena_idx) {
 			}
 		} else {
 			to_write -= bytes;
-			writed   += bytes;
+			written  += bytes;
 		}
 	}
 	return;

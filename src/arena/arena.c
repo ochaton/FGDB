@@ -1,4 +1,5 @@
 #include "arena/meta.h"
+#include "lru/lruq.h"
 #include "lib/buddy/memory.h"
 
 #include <assert.h>
@@ -6,6 +7,7 @@
 #include <string.h>
 
 extern arena_t * arena;
+extern lru_queue_t * lru
 
 arena_t * new_arena(size_t pages) {
 	arena_t * arena = malloc(sizeof(arena_t));
@@ -35,21 +37,25 @@ arena_page_id_t arena_get_next_page(void) {
 		return arena->uploaded_pages++;
 	}
 
-	// call lru_cache
+	page_header_t *header = least_recent_page(lru);
+	disk_dump_page((uint32_t) header->page_id, (uint32_t) header->arena_id);
+
+	return header->arena_id;
 }
 
 void arena_page_touch(arena_page_id_t page_id) {
-	// Call to LRU:
+	page_header_t *h = VECTOR_GET(arena->headers, page_header_t*, page_id);
+	touch_page(lru, h);
 }
 
 void arena_defragmentate_page(arena_page_id_t page_id, page_header_t * header) {
-	// TODO: Lock page in LRU
 	arena_page_t * page = &arena->pages[page_id];
+	header->state = PAGE_PROCESSING;
 	off_t offset = 0;
 	for (int block_id = 0; block_id < header->keys->total; block_id++) {
 		page_header_key_t * key = VECTOR_GET(header->keys[0], page_header_key_t *, block_id);
 		str_t * value = (str_t *) &page[key->offset];
-		memmove(&page[key->offset], &page[offset], value->size);
+		memmove(&page[offset], &page[key->offset], value->size);
 
 		key->offset = offset;
 		offset += value->size;
@@ -57,8 +63,7 @@ void arena_defragmentate_page(arena_page_id_t page_id, page_header_t * header) {
 
 	header->fragmentated_bytes = 0;
 	header->tail_bytes = offset;
-	header->state = PAGE_DIRTY;
 
 	memset((char *) page + header->tail_bytes, 0, PAGE_SIZE - header->tail_bytes);
-	// TODO: unlock page
+	header->state = PAGE_DIRTY;
 }

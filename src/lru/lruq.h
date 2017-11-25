@@ -16,7 +16,7 @@ typedef struct {
 
 lru_queue_t* new_queue(void);
 
-void heat_page(lru_queue_t* q, page_header_t* p);
+void touch_page(lru_queue_t* q, page_header_t* p);
 
 page_header_t* least_recent_page(lru_queue_t* q);
 

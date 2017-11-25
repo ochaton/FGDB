@@ -31,7 +31,8 @@ typedef struct {
 
 	page_id_t page_id;
 	arena_page_id_t arena_id;
-	enum { PAGE_DIRTY, PAGE_CLEAN } state:8;
+	page_header_t *lru_next, *lru_prev;
+	enum { PAGE_DIRTY, PAGE_CLEAN, PAGE_PROCESSING  } state:8;
 	enum { PAGE_FREE, PAGE_INMEMORY, PAGE_INDISK } location:8;
 } page_header_t;
 
