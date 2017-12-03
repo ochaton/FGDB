@@ -16,7 +16,7 @@ disk_t * init_disk(char * path) {
 	disk_t * disk = malloc(sizeof(disk_t));
 	assert(disk);
 
-	if (-1 == (disk->fd = open(path, O_RDWR | O_CREAT))) {
+	if (-1 == (disk->fd = open(path, O_RDWR | O_CREAT, 0644))) {
 		fprintf(stderr, "Error open snapshot-file: %s\n", strerror(errno));
 		exit(errno);
 	}
@@ -34,7 +34,7 @@ void destroy_disk(disk_t * disk) {
 	free(disk);
 }
 
-void disk_upload_page(disk_t *disk, uint32_t disk_page_idx, uint32_t arena_idx) {
+void disk_upload_page(disk_t *disk, page_id_t disk_page_idx, arena_page_id_t arena_idx) {
 	off_t page_pos = disk->arena_start + disk_page_idx * PAGE_SIZE;
 
 	lseek(disk->fd, page_pos, SEEK_SET);
@@ -55,7 +55,7 @@ void disk_upload_page(disk_t *disk, uint32_t disk_page_idx, uint32_t arena_idx) 
 	return;
 }
 
-void disk_dump_page(uint32_t page_idx, uint32_t arena_idx) {
+void disk_dump_page(page_id_t page_idx, arena_page_id_t arena_idx) {
 	off_t page_pos = disk->arena_start + page_idx * PAGE_SIZE;
 
 	lseek(disk->fd, page_pos, SEEK_SET);

@@ -12,20 +12,25 @@
 
 #include "lib/vector/vector.h"
 #include "arena/meta.h"
+#include "lru/lruq.h"
+
 arena_t   * arena;
 disk_t    * disk;
+lru_queue_t * lru;
 // hashmap_t * hashmap;
 
 void start() {
+	lru = new_lru_queue();
 	buddy_new(8192); // 8Mb
 	arena = new_arena(1024);
-	disk = init_disk("/home/ochaton/vcs/tcp-ev-server/db.snap");
+	disk = init_disk("db.snap");
 	arena->headers = init_headers(1024);
 }
 
 void finish() {
 	destroy_headers();
 	destroy_arena(arena);
+	destroy_lru_queue(lru);
 	destroy_disk(disk);
 
 	buddy_destroy();

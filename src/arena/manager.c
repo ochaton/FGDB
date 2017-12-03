@@ -1,4 +1,5 @@
 #include "arena/meta.h"
+#include "lru/lruq.h"
 #include <stdlib.h>
 #include <string.h>
 #include <assert.h>
@@ -64,7 +65,7 @@ page_header_t * headers_new_page(void) {
 	vector_init(header->keys, PAGE_HEADER_KEYS_INIT_COUNT);
 
 	vector_add(arena->headers, header);
-	touch_page(lru, header);
+	lru_touch_page(lru, header);
 
 	return header;
 }
@@ -182,7 +183,8 @@ page_header_t * page_value_unset(hashmap_key_t * key, str_t * value) {
 static arena_page_id_t heat_page(page_id_t page_id) {
 	arena_page_id_t arena_page_id = arena_get_next_page();
 	disk_upload_page(disk, page_id, arena_page_id);
-	touch_page(lru, VECTOR_GET(arena->headers, page_header_t*, arena_page_id));
+	page_header_t * header = VECTOR_GET(arena->headers[0], page_header_t*, arena_page_id);
+	lru_touch_page(lru, header);
 	return arena_page_id;
 }
 

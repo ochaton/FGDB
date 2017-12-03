@@ -1,13 +1,13 @@
 #include "lruq.h"
 
-lru_queue_t* new_queue(void) {
+lru_queue_t* new_lru_queue(void) {
 	lru_queue_t* lq = malloc(sizeof(lru_queue_t));
 	lq->top    = NULL;
 	lq->bottom = NULL;
 	return lq;
 }
 
-void touch_page(lru_queue_t* q, page_header_t* p) {
+void lru_touch_page(lru_queue_t* q, page_header_t* p) {
 	p->lru_prev = q->top;
 	p->lru_next = NULL;
 	if (q->top) q->top->lru_next = p;
