@@ -8,8 +8,7 @@
 #include "lib/vector/vector.h"
 #include "common.h"
 
-typedef struct page_header {
-	// hashmap_key_t * key;
+typedef struct {
 	uint16_t offset;
 } page_header_key_t;
 
@@ -22,16 +21,16 @@ enum {
 	FGDB_FRAGMENTATION_FACTOR = 4,
 };
 
-typedef struct {
+typedef struct page_header {
 	uint64_t lsn;
 	uint16_t fragmentated_bytes;
 	uint16_t tail_bytes;
 
 	struct vector *keys;
+	struct page_header *lru_next, *lru_prev;
 
 	page_id_t page_id;
 	arena_page_id_t arena_id;
-	page_header_t *lru_next, *lru_prev;
 	enum { PAGE_DIRTY, PAGE_CLEAN, PAGE_PROCESSING  } state:8;
 	enum { PAGE_FREE, PAGE_INMEMORY, PAGE_INDISK } location:8;
 } page_header_t;

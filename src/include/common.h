@@ -30,6 +30,7 @@ typedef struct {
 
 extern struct arena *arena;
 extern struct disk  *disk;
+extern struct lru_queue_t  *lru;
 // extern hashmap_t *hashmap;
 
 #endif // COMMON_H

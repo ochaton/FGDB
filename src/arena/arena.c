@@ -7,7 +7,6 @@
 #include <string.h>
 
 extern arena_t * arena;
-extern lru_queue_t * lru
 
 arena_t * new_arena(size_t pages) {
 	arena_t * arena = malloc(sizeof(arena_t));
@@ -38,14 +37,14 @@ arena_page_id_t arena_get_next_page(void) {
 	}
 
 	page_header_t *header = least_recent_page(lru);
-	disk_dump_page((uint32_t) header->page_id, (uint32_t) header->arena_id);
+	disk_dump_page(header->page_id, header->arena_id);
 
 	return header->arena_id;
 }
 
 void arena_page_touch(arena_page_id_t page_id) {
-	page_header_t *h = VECTOR_GET(arena->headers, page_header_t*, page_id);
-	touch_page(lru, h);
+	page_header_t *h = VECTOR_GET(arena->headers[0], page_header_t*, page_id);
+	lru_touch_page(lru, h);
 }
 
 void arena_defragmentate_page(arena_page_id_t page_id, page_header_t * header) {

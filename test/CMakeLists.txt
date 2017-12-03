@@ -9,6 +9,7 @@ include_directories(../src/include/)
 
 add_subdirectory(../src/lib/buddy buddy)
 add_subdirectory(../src/lib/vector vector)
+add_subdirectory(../src/lru/ lruq)
 
 set(arena_sources
 	../src/arena/arena.c
@@ -21,5 +22,4 @@ add_library(arena STATIC ${arena_sources})
 add_library(disk STATIC ${disk_sources})
 
 add_executable(fgdb_test fgdb.c)
-target_link_libraries(fgdb_test arena disk buddy vector)
-# target_link_libraries(fgdb_test arena disk buddy)
+target_link_libraries(fgdb_test arena disk buddy vector lruq)
