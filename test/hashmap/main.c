@@ -110,10 +110,51 @@ void test3() {
 	}
 }
 
+void test4() {
+
+	avlnode_ptr found, not_found;
+	str_t keys[] = {
+		{ 5, "first"  },
+		{ 6, "second" },
+		{ 5, "third"  },
+		{ 6, "fourth" }
+	};
+	int pages[] = { 1, 2, 3, 4, 5 };
+
+	/* Insert keys */
+	for (int num = 0; num < sizeof keys / sizeof *keys; num++) {
+		TEST_ASSERT_MESSAGE(hash_insert(hashmap, keys[num], &pages[num]) == 1, "Must inserted with status = 1");
+	}
+
+	/* Select keys */
+	for (int num = 0; num < sizeof keys / sizeof *keys; num++) {
+		found = hash_search(hashmap, keys[num]);
+		TEST_ASSERT_NOT_NULL(found);
+		TEST_ASSERT_EQUAL_STRING_LEN(found->key.ptr, keys[num].ptr, keys[num].size);
+		TEST_ASSERT_MESSAGE(found->page == &pages[num], "Save pointer to page");
+	}
+
+	/* Delete keys 1,2 */
+	for (int num = 0; num < 2; num++) {
+		TEST_ASSERT_MESSAGE(hash_delete(hashmap, keys[num]) == 1, "Must be deleted with status = 1");
+	}
+
+	/* Insert 5th key */
+	str_t fifth = { 5, "fifth" };
+	{
+		TEST_ASSERT_MESSAGE(hash_insert(hashmap, fifth, &pages[5]) == 1, "Must inserted with status = 1");
+		found = hash_search(hashmap, fifth);
+		TEST_ASSERT_NOT_NULL(found);
+		TEST_ASSERT_EQUAL_STRING_LEN(found->key.ptr, fifth.ptr, fifth.size);
+		TEST_ASSERT_MESSAGE(found->page == &pages[5], "Save pointer to page");
+	}
+}
+
 int main(void) {
 	UNITY_BEGIN();
 	RUN_TEST(test1);
 	RUN_TEST(test2);
-	RUN_TEST(test3);
+	// RUN_TEST(test3);
+	RUN_TEST(test4);
 	return UNITY_END();
 }
