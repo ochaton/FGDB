@@ -22,15 +22,23 @@ set(arena_sources
 set(disk_sources
 	../src/arena/disk.c)
 
+set(memory_sources
+	../src/memory/hashmap.c)
+
 add_library(arena STATIC ${arena_sources})
 add_library(disk STATIC ${disk_sources})
+add_library(memory STATIC ${memory_sources})
 
 add_executable(fgdb_test_exe fgdb.c)
-target_link_libraries(fgdb_test_exe arena disk buddy vector lruq unity)
+target_link_libraries(fgdb_test_exe arena memory disk buddy vector lruq unity)
 
 add_executable(hashmap_test_exe hashmap/main.c)
 target_link_libraries(hashmap_test_exe HashMap unity)
 
+add_executable(memory_test_exe memory/main.c)
+target_link_libraries(memory_test_exe memory HashMap unity)
+
 include(CTest)
 
 add_test(hashmap_test hashmap_test_exe)
+add_test(memory_test memory_test_exe)

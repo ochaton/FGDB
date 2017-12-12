@@ -8,6 +8,7 @@ typedef uint64_t page_id_t;
 typedef uint64_t arena_page_id_t;
 
 typedef uint16_t page_header_key_id_t;
+struct page_header_key_t;
 
 typedef struct {
 	uint16_t size;

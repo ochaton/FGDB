@@ -8,7 +8,7 @@
 #include "lib/vector/vector.h"
 #include "common.h"
 
-typedef struct {
+typedef struct page_header_key_t {
 	uint16_t offset;
 } page_header_key_t;
 

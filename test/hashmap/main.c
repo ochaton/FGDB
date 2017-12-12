@@ -1,12 +1,3 @@
-
-
-// struct hashmap_key {
-// 	/* Pointer to offset inside page (stored inside headers of arena-pages) */
-// 	page_header_key_t * header_key_id;
-// 	/* Page identificator. Storing this we can find the page, where stored value */
-// 	page_id_t page;
-// };
-
 #include "lib/hashmap/HashMap.h"
 
 /* Test Suite Unity */
