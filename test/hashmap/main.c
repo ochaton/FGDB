@@ -154,7 +154,7 @@ int main(void) {
 	UNITY_BEGIN();
 	RUN_TEST(test1);
 	RUN_TEST(test2);
-	// RUN_TEST(test3);
+	RUN_TEST(test3);
 	RUN_TEST(test4);
 	return UNITY_END();
 }
