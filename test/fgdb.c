@@ -13,6 +13,7 @@
 #include "lib/vector/vector.h"
 #include "arena/meta.h"
 #include "lru/lruq.h"
+#include "wal/wal.h"
 
 arena_t   * arena;
 disk_t    * disk;
