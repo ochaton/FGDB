@@ -8,7 +8,7 @@
 
 typedef struct hashmap_key {
 	str_t * key;                               /* This is a pointer to key stored inside heavy struct HashMap */
-	struct page_header_key_t * header_key_id;  /* Pointer to offset inside page (stored inside headers of arena-pages) */
+	page_header_key_id_t header_key_id;        /* Pointer to offset inside page (stored inside headers of arena-pages) */
 	page_id_t page;                            /* Page identificator. Storing this we can find the page, where stored value */
 } hashmap_key_t;
 

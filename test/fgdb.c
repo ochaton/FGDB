@@ -1,6 +1,3 @@
-// #include "memory/hashmap.h"
-// #include "arena/disk.h"
-
 #include "lib/buddy/memory.h"
 #include "common.h"
 
@@ -14,12 +11,14 @@
 #include "arena/meta.h"
 #include "lru/lruq.h"
 
+#include "unity.h"
+
 arena_t   * arena;
 disk_t    * disk;
 lru_queue_t * lru;
 // hashmap_t * hashmap;
 
-void start() {
+void setUp() {
 	lru = new_lru_queue();
 	buddy_new(8192); // 8Mb
 	arena = new_arena(1024);
@@ -27,7 +26,7 @@ void start() {
 	arena->headers = init_headers(1024);
 }
 
-void finish() {
+void tearDown() {
 	destroy_headers();
 	destroy_arena(arena);
 	destroy_lru_queue(lru);
@@ -36,14 +35,11 @@ void finish() {
 	buddy_destroy();
 }
 
-int main(int argc, char const *argv[]) {
-	start();
-
-	// Add page:
-	// page_header_t * page_header = headers_alloc_page(100);
-
+void test1(void) {
 	str_t val = { 3, "val" };
-	hashmap_key_t key = { { 3, "key" }, -1, 0 };
+	str_t key_val = { 3, "key" };
+
+	hashmap_key_t key = { &key_val, 0, 0 };
 	page_header_t * header = page_value_set(&val, &key);
 
 	str_t retval;
@@ -59,7 +55,10 @@ int main(int argc, char const *argv[]) {
 
 	str_t newval;
 	fprintf(stderr, "%d\n", page_value_get(&key, &newval) == NULL);
+}
 
-	finish();
-	return 0;
+int main(void) {
+	UNITY_BEGIN();
+	RUN_TEST(test1);
+	return UNITY_END();
 }

@@ -52,7 +52,8 @@ hashmap_key_t * hashmap_lookup_key(hashmap_t hmap, str_t * key, hashmap_error_t 
 	avlnode_ptr found = hash_search(hmap, *key);
 
 	if (found) {
-		return (hashmap_key_t *) found->page;
+		hashmap_key_t * key_found = found->page;
+		return key_found;
 	}
 
 	return NULL;
@@ -66,10 +67,12 @@ hashmap_key_t * hashmap_delete_key(hashmap_t hmap, str_t * key, hashmap_error_t 
 		return NULL;
 	}
 
+	hashmap_key_t * key_found = (hashmap_key_t *) found->page;
+
 	hashmap_key_t * rv = calloc(1, sizeof(hashmap_key_t));
 	rv->key = key;
-	rv->header_key_id = ((hashmap_key_t *) found->page)->header_key_id;
-	rv->page = ((hashmap_key_t *) found->page)->page;
+	rv->header_key_id = key_found->header_key_id;
+	rv->page = key_found->page;
 
 	int result = hash_delete(hmap, *key);
 	assert(result == 1);

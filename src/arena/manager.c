@@ -6,8 +6,6 @@
 
 #include "common.h"
 
-// uint16_t * page_tail_bytes_container;
-
 static page_id_t page_value_alloc(size_t bytes);
 static arena_page_id_t heat_page(page_id_t page_id);
 
