@@ -4,9 +4,9 @@
 #include <stddef.h>
 #include <stdint.h>
 
+#include "common.h"
 #include "memory/hashmap.h"
 #include "lib/vector/vector.h"
-#include "common.h"
 
 typedef struct page_header_key_t {
 	uint16_t offset;

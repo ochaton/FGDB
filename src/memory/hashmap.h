@@ -12,7 +12,7 @@ typedef struct hashmap_key {
 	page_id_t page;                            /* Page identificator. Storing this we can find the page, where stored value */
 } hashmap_key_t;
 
-typedef hm_node * hashmap_t;
+typedef struct HashMap * hashmap_t;
 
 hashmap_t hashmap_new(void);
 void hashmap_delete(hashmap_t hashmap);
