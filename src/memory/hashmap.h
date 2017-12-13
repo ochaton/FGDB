@@ -7,7 +7,6 @@
 #include "lib/hashmap/HashMap.h"
 
 typedef struct key_meta_t {
-	// str_t * key;                               /* This is a pointer to key stored inside heavy struct HashMap */
 	page_header_key_id_t header_key_id;        /* Pointer to offset inside page (stored inside headers of arena-pages) */
 	page_id_t page;                            /* Page identificator. Storing this we can find the page, where stored value */
 } key_meta_t;

@@ -100,6 +100,7 @@ page_header_key_t * headers_push_key(page_header_t * header, key_meta_t * key, o
 
 	vector_add(header->keys, page_key);
 	key->header_key_id = header->keys->total - 1; // last one
+	page_key->key_meta_ptr = key;
 	return page_key;
 }
 
@@ -154,21 +155,39 @@ page_header_t * page_value_get(key_meta_t * key, str_t * retval) {
 page_header_t * page_value_unset(key_meta_t * key, str_t * value) {
 	page_header_t * header = arena->headers->items[ key->page ];
 
+	/* Heat page if it's indisk */
+
 	if (header->location == PAGE_INDISK) {
 		header->arena_id = heat_page(header->page_id);
 		header->location = PAGE_INMEMORY;
 	}
 
 	if (header->location == PAGE_INMEMORY) {
-		arena_page_t * page = &arena->pages[ header->arena_id ];
-		page_header_key_t * header_key = (page_header_key_t *) VECTOR_GET(header->keys[0], page_header_key_t*, key->header_key_id);
 
+		/* Get arena-page */
+
+		arena_page_t * page = &arena->pages[ header->arena_id ];
+
+		/* Take over header_key we deleted */
+
+		page_header_key_t * deleted_header_key = VECTOR_GET(header->keys[0], page_header_key_t*, key->header_key_id);
 		vector_delete(header->keys, key->header_key_id);
 
-		value->size = *(typeof(value->size) *) &page[ header_key->offset ];
-		value->ptr  = (char *) &page[ header_key->offset ] + sizeof(typeof(value->size));
+		/* Recount header_key index for all keys inside this page */
 
-		free(header_key);
+		for (size_t key_id = key->header_key_id; key_id < header->keys->total; key_id++) {
+			page_header_key_t * page_header_key = VECTOR_GET(header->keys[0], page_header_key_t*, key_id);
+			page_header_key->key_meta_ptr->header_key_id -= 1;
+		}
+
+		/* Return value from page */
+
+		value->size = *(typeof(value->size) *) &page[ deleted_header_key->offset ];
+		value->ptr  = (char *) &page[ deleted_header_key->offset ] + sizeof(typeof(value->size));
+
+		free(deleted_header_key);
+
+		/* Mark page as dirty for further defragmentation */
 
 		header->state = PAGE_DIRTY;
 

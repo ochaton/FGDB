@@ -10,6 +10,7 @@
 
 typedef struct page_header_key_t {
 	uint16_t offset;
+	struct key_meta_t * key_meta_ptr;
 } page_header_key_t;
 
 enum { PAGE_HEADER_KEYS_INIT_COUNT = 4 };
