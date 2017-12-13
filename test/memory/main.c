@@ -16,11 +16,11 @@ void tearDown() {
 
 void test1() {
 	str_t key2insert = { 3, "key" };
-	// int hashmap_insert_key(hashmap_t hmap, hashmap_key_t * new_key, hashmap_error_t *err);
+	// int hashmap_insert_key(hashmap_t hmap, key_meta_t * new_key, hashmap_error_t *err);
 	hashmap_error_t err;
 	page_id_t page = 0;
 
-	hashmap_key_t key_meta = {
+	key_meta_t key_meta = {
 		0,
 		page
 	};
@@ -29,15 +29,15 @@ void test1() {
 	TEST_ASSERT_MESSAGE(result == 0, "Must be 0");
 	TEST_ASSERT_MESSAGE(err == HASHMAP_SUCCESS, "Must be HASHMAP_SUCCESS");
 
-	hashmap_key_t * found = hashmap_lookup_key(hashmap, &key2insert, &err);
+	key_meta_t * found = hashmap_lookup_key(hashmap, &key2insert, &err);
 	TEST_ASSERT_NOT_NULL(found);
 	TEST_ASSERT_MESSAGE(err == HASHMAP_SUCCESS, "Must be HASHMAP_SUCCESS");
 
 	TEST_ASSERT_MESSAGE(found->header_key_id == 0, "Offset must be 0");
 	TEST_ASSERT_MESSAGE(found->page == page, "Save pointer to page");
 
-	// hashmap_key_t * hashmap_delete_key(hashmap_t hmap, str_t * key, hashmap_error_t *err)
-	hashmap_key_t * deleted = hashmap_delete_key(hashmap, &key2insert, &err);
+	// key_meta_t * hashmap_delete_key(hashmap_t hmap, str_t * key, hashmap_error_t *err)
+	key_meta_t * deleted = hashmap_delete_key(hashmap, &key2insert, &err);
 	TEST_ASSERT_NOT_NULL(deleted);
 	TEST_ASSERT_MESSAGE(err == HASHMAP_SUCCESS, "Must be HASHMAP_SUCCESS");
 	free(deleted);

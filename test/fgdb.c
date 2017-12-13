@@ -71,7 +71,7 @@ void test1(void) {
 
 	/* 3. Allocate page for value */
 
-	hashmap_key_t key_meta = { -1, -1 };
+	key_meta_t key_meta = { -1, -1 };
 	page_header_t * header = page_value_set(insert_val, &key_meta);
 
 	TEST_ASSERT_NOT_NULL(header);
@@ -95,7 +95,7 @@ void test1(void) {
 	/* 6. Select inserted key */
 
 	str_t key2find = { 3, "key" };
-	hashmap_key_t * found = hashmap_lookup_key(hashmap, &key2find, &err);
+	key_meta_t * found = hashmap_lookup_key(hashmap, &key2find, &err);
 	TEST_ASSERT_NOT_NULL(found);
 	TEST_ASSERT_MESSAGE(err == HASHMAP_SUCCESS, "Key must be found inside hashmap with HASHMAP_SUCCESS");
 

@@ -16,7 +16,7 @@ void operation_insert(req_t * req, hashmap_t * hashmap);
 void operation_update(req_t * req, hashmap_t * hashmap);
 
 void operation_peek(req_t * req, hashmap_t * hashmap) {
-	hashmap_key_t * key = hashmap_lookup_key(hashmap, &req->msg->key);
+	key_meta_t * key = hashmap_lookup_key(hashmap, &req->msg->key);
 	proto_reply_t reply;
 
 	if (!key) {
@@ -34,7 +34,7 @@ void operation_peek(req_t * req, hashmap_t * hashmap) {
 }
 
 void operation_select(req_t * req, hashmap_t * hashmap) {
-	hashmap_key_t * key = hashmap_lookup_key(hashmap, &req->msg->key);
+	key_meta_t * key = hashmap_lookup_key(hashmap, &req->msg->key);
 	proto_reply_t reply;
 
 	if (!key) {
@@ -64,7 +64,7 @@ void operation_select(req_t * req, hashmap_t * hashmap) {
 }
 
 void operation_delete(req_t * req, hashmap_t * hashmap) {
-	hashmap_key_t * key = hashmap_lookup_key(hashmap, &req->msg->key);
+	key_meta_t * key = hashmap_lookup_key(hashmap, &req->msg->key);
 	proto_reply_t reply;
 
 	if (!key) {
@@ -91,7 +91,7 @@ void operation_delete(req_t * req, hashmap_t * hashmap) {
 }
 
 void operation_insert(req_t * req, hashmap_t * hashmap) {
-	hashmap_key_t * key = hashmap_lookup_key(hashmap, &req->msg->key);
+	key_meta_t * key = hashmap_lookup_key(hashmap, &req->msg->key);
 	proto_reply_t reply;
 
 	if (!req->msg->val.size) {
@@ -134,7 +134,7 @@ void operation_insert(req_t * req, hashmap_t * hashmap) {
 	// TODO: here can be some shit...
 	memcpy(&value->ptr[0], req->msg->val.ptr, value->size);
 
-	hashmap_key_t key_to_insert;
+	key_meta_t key_to_insert;
 	key_to_insert.key.size = req->msg->key.size;
 	key_to_insert.key.ptr  = (char *) malloc(key_to_insert.key.size);
 
@@ -157,7 +157,7 @@ void operation_insert(req_t * req, hashmap_t * hashmap) {
 	key_to_insert.fragmentated = CLEAN;
 
 	hashmap_error_t err;
-	hashmap_key_t * inserted;
+	key_meta_t * inserted;
 	if (NULL == (inserted = hashmap_insert_key(hashmap, &key_to_insert, &err))) {
 		req->log->error(req->log, "Insert to hashmap error: %s", hashmap_error[err]);
 		free(key_to_insert.key.ptr);

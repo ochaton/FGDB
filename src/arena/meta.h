@@ -52,15 +52,15 @@ void destroy_arena(arena_t * arena);
 arena_page_id_t arena_get_next_page(void);
 void arena_defragmentate_page(arena_page_id_t page_id, page_header_t * header);
 
-typedef struct hashmap_key hashmap_key_t;
+typedef struct key_meta_t key_meta_t;
 
 page_headers_vector_t * init_headers(size_t pages);
 void destroy_headers(void);
 page_header_t * headers_new_page(void);
 page_header_t * headers_alloc_page(size_t value_size);
-page_header_t * page_value_set(str_t * value, hashmap_key_t * key);
-page_header_t * page_value_get(hashmap_key_t * key, str_t * retval);
-page_header_t * page_value_unset(hashmap_key_t * key, str_t * value);
+page_header_t * page_value_set(str_t * value, key_meta_t * key);
+page_header_t * page_value_get(key_meta_t * key, str_t * retval);
+page_header_t * page_value_unset(key_meta_t * key, str_t * value);
 
 
 #endif //FGDB_META_PAGES_H

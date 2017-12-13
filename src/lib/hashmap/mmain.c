@@ -1,6 +1,6 @@
 // This is a personal academic project. Dear PVS-Studio, please check it.
 // PVS-Studio Static Code Analyzer for C, C++ and C#: http://www.viva64.com
-// struct hashmap_key {
+// struct struct key_meta_t {
 //  /* Pointer to offset inside page (stored inside headers of arena-pages) */
 //  page_header_key_t * header_key_id;
 //  /* Page identificator. Storing this we can find the page, where stored value */

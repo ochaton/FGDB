@@ -11,9 +11,9 @@
 hashmap_t hashmap_new(void);
 void hashmap_delete(hashmap_t hashmap);
 
-int hashmap_insert_key(hashmap_t hmap, hashmap_key_t * key_meta, str_t * key, hashmap_error_t *err);
-hashmap_key_t * hashmap_lookup_key(hashmap_t hmap, str_t * key, hashmap_error_t *err);
-hashmap_key_t * hashmap_delete_key(hashmap_t hmap, str_t * key, hashmap_error_t *err);
+int hashmap_insert_key(hashmap_t hmap, key_meta_t * key_meta, str_t * key, hashmap_error_t *err);
+key_meta_t * hashmap_lookup_key(hashmap_t hmap, str_t * key, hashmap_error_t *err);
+key_meta_t * hashmap_delete_key(hashmap_t hmap, str_t * key, hashmap_error_t *err);
 
 hashmap_t hashmap_new();
 void hashmap_delete(hashmap_t hashmap);
@@ -29,7 +29,7 @@ void hashmap_delete(hashmap_t hashmap) {
 	assert(hash_erase(hashmap) == 1);
 }
 
-int hashmap_insert_key(hashmap_t hmap, hashmap_key_t * key_meta, str_t * key, hashmap_error_t *err) {
+int hashmap_insert_key(hashmap_t hmap, key_meta_t * key_meta, str_t * key, hashmap_error_t *err) {
 	*err = HASHMAP_SUCCESS;
 	avlnode_ptr found = hash_search(hmap, *key);
 
@@ -47,19 +47,19 @@ int hashmap_insert_key(hashmap_t hmap, hashmap_key_t * key_meta, str_t * key, ha
 	return 0;
 }
 
-hashmap_key_t * hashmap_lookup_key(hashmap_t hmap, str_t * key, hashmap_error_t *err) {
+key_meta_t * hashmap_lookup_key(hashmap_t hmap, str_t * key, hashmap_error_t *err) {
 	*err = HASHMAP_SUCCESS;
 	avlnode_ptr found = hash_search(hmap, *key);
 
 	if (found) {
-		hashmap_key_t * key_meta = found->meta;
+		key_meta_t * key_meta = found->meta;
 		return key_meta;
 	}
 
 	return NULL;
 }
 
-hashmap_key_t * hashmap_delete_key(hashmap_t hmap, str_t * key, hashmap_error_t *err) {
+key_meta_t * hashmap_delete_key(hashmap_t hmap, str_t * key, hashmap_error_t *err) {
 	*err = HASHMAP_SUCCESS;
 	avlnode_ptr found = hash_search(hmap, *key);
 
@@ -67,9 +67,9 @@ hashmap_key_t * hashmap_delete_key(hashmap_t hmap, str_t * key, hashmap_error_t 
 		return NULL;
 	}
 
-	hashmap_key_t * key_meta = (hashmap_key_t *) found->meta;
+	key_meta_t * key_meta = (key_meta_t *) found->meta;
 
-	hashmap_key_t * rv = calloc(1, sizeof(hashmap_key_t));
+	key_meta_t * rv = calloc(1, sizeof(key_meta_t));
 	rv->header_key_id = key_meta->header_key_id;
 	rv->page = key_meta->page;
 

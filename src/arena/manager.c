@@ -94,7 +94,7 @@ page_header_t * headers_alloc_page(size_t value_size) {
 	return prefered;
 }
 
-page_header_key_t * headers_push_key(page_header_t * header, hashmap_key_t * key, off_t page_offset) {
+page_header_key_t * headers_push_key(page_header_t * header, key_meta_t * key, off_t page_offset) {
 	page_header_key_t * page_key = (page_header_key_t *) malloc(sizeof(page_header_key_t));
 	page_key->offset = page_offset;
 
@@ -104,7 +104,7 @@ page_header_key_t * headers_push_key(page_header_t * header, hashmap_key_t * key
 }
 
 // Returns offset in page
-page_header_t * page_value_set(str_t * value, hashmap_key_t * key) {
+page_header_t * page_value_set(str_t * value, key_meta_t * key) {
 	page_header_t * header = headers_alloc_page(value->size);
 	arena_page_t  * page   = &arena->pages[ header->arena_id ];
 
@@ -123,7 +123,7 @@ page_header_t * page_value_set(str_t * value, hashmap_key_t * key) {
 	return header;
 }
 
-page_header_t * page_value_get(hashmap_key_t * key, str_t * retval) {
+page_header_t * page_value_get(key_meta_t * key, str_t * retval) {
 	page_header_t * header = arena->headers->items[ key->page ];
 
 	if (header->location == PAGE_INDISK) {
@@ -151,7 +151,7 @@ page_header_t * page_value_get(hashmap_key_t * key, str_t * retval) {
 	return NULL;
 }
 
-page_header_t * page_value_unset(hashmap_key_t * key, str_t * value) {
+page_header_t * page_value_unset(key_meta_t * key, str_t * value) {
 	page_header_t * header = arena->headers->items[ key->page ];
 
 	if (header->location == PAGE_INDISK) {
