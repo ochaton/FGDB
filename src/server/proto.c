@@ -23,6 +23,10 @@ msgpack_sbuffer* serialize_reply (proto_reply_t * reply) {
 					msgpack_pack_bin_body(packer, reply->val.ptr, reply->val.size);
 					break;
 				}
+				default:
+				{
+					break;
+				}
 			}
 			break;
 		}
@@ -34,6 +38,10 @@ msgpack_sbuffer* serialize_reply (proto_reply_t * reply) {
 		case REPLY_FATAL:
 		{
 			msgpack_pack_int(packer, reply->fatal);
+			break;
+		}
+		default:
+		{
 			break;
 		}
 	}

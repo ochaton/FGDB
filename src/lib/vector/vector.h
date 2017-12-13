@@ -17,12 +17,12 @@
 
 typedef struct vector {
     void **items;
-    int capacity;
-    int total;
+    size_t capacity;
+    size_t total;
 } vector;
 
 void vector_init(vector *, size_t capacity);
-int vector_total(vector *);
+size_t vector_total(vector *);
 void vector_add(vector *, void *);
 void vector_set(vector *, uint, void *);
 void *vector_get(vector *, uint);

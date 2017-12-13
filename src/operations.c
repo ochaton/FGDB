@@ -4,19 +4,22 @@
 
 #include "memory/hashmap.h"
 #include "lib/buddy/memory.h"
-#include "arena.h"
+#include "arena/meta.h"
 
 #include <errno.h>
 #include <string.h>
+#include <stdlib.h>
 
-void operation_peek(req_t * req, hashmap_t * hashmap);
-void operation_select(req_t * req, hashmap_t * hashmap);
-void operation_delete(req_t * req, hashmap_t * hashmap);
-void operation_insert(req_t * req, hashmap_t * hashmap);
-void operation_update(req_t * req, hashmap_t * hashmap);
 
-void operation_peek(req_t * req, hashmap_t * hashmap) {
-	key_meta_t * key = hashmap_lookup_key(hashmap, &req->msg->key);
+void operation_peek(req_t * req, hashmap_t hashmap);
+void operation_select(req_t * req, hashmap_t hashmap);
+void operation_delete(req_t * req, hashmap_t hashmap);
+void operation_insert(req_t * req, hashmap_t hashmap);
+void operation_update(req_t * req, hashmap_t hashmap);
+
+void operation_peek(req_t * req, hashmap_t hashmap) {
+	hashmap_error_t err;
+	key_meta_t * key = hashmap_lookup_key(hashmap, &req->msg->key, &err);
 	proto_reply_t reply;
 
 	if (!key) {
@@ -33,11 +36,12 @@ void operation_peek(req_t * req, hashmap_t * hashmap) {
 	return;
 }
 
-void operation_select(req_t * req, hashmap_t * hashmap) {
-	key_meta_t * key = hashmap_lookup_key(hashmap, &req->msg->key);
+void operation_select(req_t * req, hashmap_t hashmap) {
+	hashmap_error_t err;
+	key_meta_t * key_meta = hashmap_lookup_key(hashmap, &req->msg->key, &err);
 	proto_reply_t reply;
 
-	if (!key) {
+	if (!key_meta) {
 		req->log->info(req->log, "Key not found");
 		reply.code = REPLY_ERROR;
 		reply.err  = KEY_NOT_FOUND;
@@ -46,28 +50,24 @@ void operation_select(req_t * req, hashmap_t * hashmap) {
 		return;
 	}
 
-	arena_node_t *value = (arena_node_t *) ((char *) key->page + key->offset);
-	req->log->info(req->log, "Key found #value=%d", value->size);
-	req->log->debug(req->log, "Value = `%s`", value->ptr);
+	page_header_t * found_value_header = page_value_get(key_meta, &reply.val);
 
-	// reply.code = REPLY_OK;
-	// reply.cmd  = req->msg->cmd;
-	// reply.val.size = value->size;
-	// reply.val.ptr = value->ptr;
+	req->log->info(req->log, "Key found #value=%d", reply.val.size);
+	req->log->debug(req->log, "Value = `%s`", reply.val.ptr); // here should be xd
 
 	reply.code = REPLY_OK;
 	reply.cmd  = req->msg->cmd;
-	reply.val.size = value->size;
-	reply.val.ptr = value->ptr;
 
 	request_reply(req, &reply);
 }
 
-void operation_delete(req_t * req, hashmap_t * hashmap) {
-	key_meta_t * key = hashmap_lookup_key(hashmap, &req->msg->key);
+void operation_delete(req_t * req, hashmap_t hashmap) {
 	proto_reply_t reply;
 
-	if (!key) {
+	hashmap_error_t err;
+	key_meta_t * deleted = hashmap_delete_key(hashmap, &req->msg->key, &err);
+
+	if (!deleted) {
 		req->log->info(req->log, "Key not found");
 		reply.code = REPLY_ERROR;
 		reply.err  = KEY_NOT_FOUND;
@@ -76,23 +76,25 @@ void operation_delete(req_t * req, hashmap_t * hashmap) {
 		return;
 	}
 
-	arena_node_t *value = (arena_node_t *) ((char *) key->page + key->offset);
-	req->log->info(req->log, "#value=%d", value->size);
-
-	buddy_free(value);
-	key->location = FREE;
+	if (!page_value_unset(deleted, &reply.val)) {
+		req->log->error(req->log, "Unsetting value failed while delete key");
+		reply.code  = REPLY_FATAL;
+		reply.cmd   = req->msg->cmd;
+		reply.fatal = PROTO_ERROR_UNKNOWN;
+		request_reply(req, &reply);
+		return;
+	}
 
 	reply.code = REPLY_OK;
 	reply.cmd = req->msg->cmd;
-	reply.val.size = value->size;
-	reply.val.ptr = value->ptr;
 
 	request_reply(req, &reply);
 }
 
-void operation_insert(req_t * req, hashmap_t * hashmap) {
-	key_meta_t * key = hashmap_lookup_key(hashmap, &req->msg->key);
+void operation_insert(req_t * req, hashmap_t hashmap) {
 	proto_reply_t reply;
+
+	/* Validate incoming data */
 
 	if (!req->msg->val.size) {
 		req->log->error(req->log, "Value not found");
@@ -103,7 +105,12 @@ void operation_insert(req_t * req, hashmap_t * hashmap) {
 		return;
 	}
 
-	if (key) {
+	/* Lookup for existing key */
+
+	hashmap_error_t err;
+	key_meta_t * key_found = hashmap_lookup_key(hashmap, &req->msg->key, &err);
+
+	if (key_found) {
 		req->log->error(req->log, "Key exists");
 		reply.code = REPLY_ERROR;
 		reply.err  = KEY_EXISTS;
@@ -112,65 +119,44 @@ void operation_insert(req_t * req, hashmap_t * hashmap) {
 		return;
 	}
 
+	/* Insert value into arena */
+
+	key_meta_t * new_key_meta = (key_meta_t *) calloc(1, sizeof(key_meta_t));
+
 	req->log->debug(req->log, "Inserting new key=>value");
+	page_header_t * header = page_value_set(&req->msg->val, new_key_meta);
 
-	// Here we take memory for our value
-	arena_node_t * value = (arena_node_t *)
-		buddy_alloc(req->msg->val.size + sizeof(arena_node_t));
-
-	if (!value) {
+	if (!header) {
 		req->log->error(req->log, "Memory not allocated for value");
 		reply.code  = REPLY_FATAL;
 		reply.fatal = PROTO_ERROR_UNKNOWN;
 
 		request_reply(req, &reply);
 		return;
-	} else {
-		req->log->debug(req->log, "Arena allocated");
 	}
 
-	value->size = req->msg->val.size;
+	req->log->debug(req->log, "Value has been put into arena");
 
-	// TODO: here can be some shit...
-	memcpy(&value->ptr[0], req->msg->val.ptr, value->size);
+	/* Insert key into hashmap */
 
-	key_meta_t key_to_insert;
-	key_to_insert.key.size = req->msg->key.size;
-	key_to_insert.key.ptr  = (char *) malloc(key_to_insert.key.size);
+	if (-1 == hashmap_insert_key(hashmap, new_key_meta, &req->msg->key, &err)) {
+		req->log->error(req->log, "Fatal error on inserting key %s", hashmap_error[err]);
 
-	if (!key_to_insert.key.ptr) {
-		req->log->error(req->log, "Memory not allocated for key errno=%s", strerror(errno));
-		buddy_free(value);
+		str_t unset_value;
+		if (page_value_unset(new_key_meta, &unset_value)) {
+			req->log->warn(req->log, "Value has been unset successfully");
+		} else {
+			req->log->error(req->log, "Unsetting value failed");
+		}
 
 		reply.code  = REPLY_FATAL;
 		reply.fatal = PROTO_ERROR_UNKNOWN;
+		reply.cmd   = req->msg->cmd;
 
 		request_reply(req, &reply);
 		return;
 	}
 
-	// TODO: here also can be some shit
-	memcpy(key_to_insert.key.ptr, req->msg->key.ptr, key_to_insert.key.size);
-	key_to_insert.page   = &value->rev_key;
-	key_to_insert.offset = 0;
-	key_to_insert.location = INMEMORY;
-	key_to_insert.fragmentated = CLEAN;
-
-	hashmap_error_t err;
-	key_meta_t * inserted;
-	if (NULL == (inserted = hashmap_insert_key(hashmap, &key_to_insert, &err))) {
-		req->log->error(req->log, "Insert to hashmap error: %s", hashmap_error[err]);
-		free(key_to_insert.key.ptr);
-		buddy_free(value);
-
-		reply.code  = REPLY_FATAL;
-		reply.fatal = PROTO_ERROR_UNKNOWN;
-
-		request_reply(req, &reply);
-		return;
-	}
-
-	value->rev_key = inserted;
 	req->log->info(req->log, "Inserted sucessfully");
 
 	reply.code = REPLY_OK;
@@ -179,6 +165,6 @@ void operation_insert(req_t * req, hashmap_t * hashmap) {
 	return;
 }
 
-void operation_update(req_t * req, hashmap_t * hashmap) {
+void operation_update(req_t * req, hashmap_t hashmap) {
 	destroy_request(req);
 }

@@ -71,7 +71,7 @@ page_header_t * headers_new_page(void) {
 page_header_t * headers_alloc_page(size_t value_size) {
 	page_header_t * prefered = NULL;
 	for (size_t page_id = 0; page_id < arena->headers->total; page_id++) {
-		register page_header_t * header;
+		register page_header_t * header = VECTOR_GET(arena->headers[0], page_header_t*, page_id);
 		if (header->tail_bytes >= value_size) {
 			return header;
 		} else if (

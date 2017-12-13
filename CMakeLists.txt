@@ -10,23 +10,45 @@ else()
 endif()
 
 set(CMAKE_C_STANDARD 99)
-set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -ggdb -Werror -Wignored-qualifiers -Winit-self\
-	-Wswitch-default -Wfloat-equal -Wshadow -Wpointer-arith \
+set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -ggdb -Werror -Wignored-qualifiers -Winit-self \
+	-Wswitch-default -Wfloat-equal  \
 	-Wtype-limits -Wempty-body -Wmissing-field-initializers -Wextra \
 	-Wmissing-field-initializers -Wextra")
 
 include_directories(src/include)
 include_directories(src/)
 
-add_subdirectory(src/lib)
+add_subdirectory(src/lib/buddy buddy)
+add_subdirectory(src/lib/vector vector)
+add_subdirectory(src/lru/ lruq)
+add_subdirectory(src/lib/hashmap hashmap)
+
 add_subdirectory(src/server)
-add_subdirectory(src/memory)
 add_subdirectory(src/transactions)
 
-add_executable(server_test src/main.c src/operations.c)
-add_executable(queue_test test/queue_test.c)
-target_link_libraries(server_test server memory transaction_queue buddy pthread)
-target_link_libraries(queue_test transaction_queue request pthread)
+set(arena_sources
+	src/arena/arena.c
+	src/arena/manager.c)
+
+set(disk_sources
+	src/arena/disk.c)
+
+set(memory_sources
+	src/memory/hashmap.c)
+
+set(operation_sources
+	src/operations.c)
+
+add_library(arena STATIC ${arena_sources})
+add_library(disk STATIC ${disk_sources})
+add_library(memory STATIC ${memory_sources})
+add_library(operations STATIC ${operation_sources})
+
+add_executable(fgdb src/main.c)
+target_link_libraries(fgdb arena memory disk buddy vector lruq HashMap server operations transaction_queue pthread)
+
+# add_executable(queue_test test/queue_test.c)
+# target_link_libraries(queue_test transaction_queue request pthread)
 
 # enable_testing()
 # add_test(NAME perl_test_server

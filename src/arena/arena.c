@@ -51,7 +51,7 @@ void arena_defragmentate_page(arena_page_id_t page_id, page_header_t * header) {
 	arena_page_t * page = &arena->pages[page_id];
 	header->state = PAGE_PROCESSING;
 	off_t offset = 0;
-	for (int block_id = 0; block_id < header->keys->total; block_id++) {
+	for (size_t block_id = 0; block_id < header->keys->total; block_id++) {
 		page_header_key_t * key = VECTOR_GET(header->keys[0], page_header_key_t *, block_id);
 		str_t * value = (str_t *) &page[key->offset];
 		memmove(&page[offset], &page[key->offset], value->size);

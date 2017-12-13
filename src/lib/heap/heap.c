@@ -58,8 +58,8 @@ static void* map_in_pages(int page_count) {
     else {
         // Clear the memory
         bzero(addr,page_count*PAGE_SIZE);
-        
-        // Return the address 
+
+        // Return the address
         return addr;
     }
 }
@@ -105,7 +105,7 @@ void heap_create(heap* h, int initial_size, int (*comp_func)(void*,void*)) {
         // Calculate the max entries
         ENTRIES_PER_PAGE = PAGE_SIZE / sizeof(heap_entry);
     }
-    
+
     // Check that initial size is greater than 0, else set it to ENTRIES_PER_PAGE
     if (initial_size <= 0)
         initial_size = ENTRIES_PER_PAGE;
@@ -227,7 +227,7 @@ void heap_insert(heap *h, void* key, void* value) {
 
         // We need a new page, do we have room?
         int mapable_pages = map_pages * PAGE_SIZE / sizeof(void*);
-    
+
         // Check if we need to grow the map table
         if (h->allocated_pages + 1 > mapable_pages) {
             // Allocate a new table, slightly bigger
@@ -280,8 +280,8 @@ void heap_insert(heap *h, void* key, void* value) {
 
         // Get the parent entry
         parent = GET_ENTRY(parent_index, map_table);
-       
-        // Compare the keys, and swap if we need to 
+
+        // Compare the keys, and swap if we need to
         if (cmp_func(key, parent->key) < 0) {
             // Move the parent down
             current->key = parent->key;
@@ -298,7 +298,7 @@ void heap_insert(heap *h, void* key, void* value) {
 
     // Insert at the current index
     current->key = key;
-    current->value = value; 
+    current->value = value;
 
     // Increase the number of active entries
     h->active_entries++;
@@ -327,7 +327,7 @@ int heap_delmin(heap* h, void** key, void** value) {
 
     // Get the active entries
     int entries = h->active_entries;
-   
+
     // If there are any other nodes, we may need to move them up
     if (h->active_entries > 0) {
         // Move the last element to the root
@@ -394,7 +394,7 @@ int heap_delmin(heap* h, void** key, void** value) {
                 break;
 
         }
-    } 
+    }
 
     // Check if we should release a page of memory
     int used_pages = entries / ENTRIES_PER_PAGE + ((entries % ENTRIES_PER_PAGE > 0) ? 1 : 0);
