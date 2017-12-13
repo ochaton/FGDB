@@ -20,13 +20,12 @@ void test1() {
 	hashmap_error_t err;
 	page_id_t page = 0;
 
-	hashmap_key_t key = {
-		&key2insert,
+	hashmap_key_t key_meta = {
 		0,
 		page
 	};
 
-	int result = hashmap_insert_key(hashmap, &key, &err);
+	int result = hashmap_insert_key(hashmap, &key_meta, &key2insert, &err);
 	TEST_ASSERT_MESSAGE(result == 0, "Must be 0");
 	TEST_ASSERT_MESSAGE(err == HASHMAP_SUCCESS, "Must be HASHMAP_SUCCESS");
 
@@ -34,9 +33,7 @@ void test1() {
 	TEST_ASSERT_NOT_NULL(found);
 	TEST_ASSERT_MESSAGE(err == HASHMAP_SUCCESS, "Must be HASHMAP_SUCCESS");
 
-	TEST_ASSERT_EQUAL_STRING_LEN(found->key->ptr, key2insert.ptr, key2insert.size);
 	TEST_ASSERT_MESSAGE(found->header_key_id == 0, "Offset must be 0");
-
 	TEST_ASSERT_MESSAGE(found->page == page, "Save pointer to page");
 
 	// hashmap_key_t * hashmap_delete_key(hashmap_t hmap, str_t * key, hashmap_error_t *err)

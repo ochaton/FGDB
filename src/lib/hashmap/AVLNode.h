@@ -19,7 +19,7 @@ enum {
 typedef struct AVLNode
 {
     str_t key;
-    void *page;
+    void *meta;
     struct AVLNode *left ,*right,*parent;
     int32_t hight;
 } avlnode;
@@ -28,10 +28,11 @@ int32_t key_comp(str_t key_first, str_t key_second);
 int32_t max_32t(int32_t first, int32_t second);
 
 // methods
-int32_t avl_new_node(avlnode_ptr *new_node, str_t key, void *page);
+int32_t avl_new_node(avlnode_ptr *new_node, str_t key, void *meta);
 avlnode_ptr avl_search(avlnode_ptr node, str_t key);
 int32_t avl_insert_node(avlnode_ptr node, avlnode_ptr node_new);
 int32_t avl_remove_node(avlnode_ptr *node, avlnode_ptr node_new);
+int32_t avl_delete_node(avlnode_ptr node);
 void avl_erase(avlnode_ptr node);
 
 int32_t avl_calc_balance(avlnode_ptr node);

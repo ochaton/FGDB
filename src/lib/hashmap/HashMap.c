@@ -4,11 +4,11 @@
 /*void hash_test_tree_print(avlnode_ptr go) {
     if (!go) {
         return;
-    } 
+    }
     int test_mid = 0;
     if (!go->parent) {
         test_mid++;
-    } 
+    }
     hash_test_tree_print(go->left);
     hash_test_tree_print(go->right);
     printf("Node is %s\n",go->key.ptr);
@@ -49,7 +49,7 @@ avlnode_ptr hash_search(hm_node_ptr node, str_t key) {
     }
 }
 
-int32_t hash_insert(hm_node_ptr node, str_t key, void *page) {
+int32_t hash_insert(hm_node_ptr node, str_t key, void *meta) {
     if (!node) {
         return -1;
     }
@@ -57,16 +57,16 @@ int32_t hash_insert(hm_node_ptr node, str_t key, void *page) {
     int32_t mid_key = hash(key, node->dep);
     //printf("mid_key %d\n",mid_key);
     while (node->len_of_list[mid_key] > MAX_HASH_DEP) {
-        
+
         node = node->top[mid_key];
         mid_key = hash(key, node->dep);
     }
-    
+
     node->len_of_list[mid_key]++;
-    
+
     avlnode_ptr new_avl_node;
-    avl_new_node(&new_avl_node, key, page);
-    
+    avl_new_node(&new_avl_node, key, meta);
+
     if (!node->top[mid_key]) {
         node->top[mid_key] = new_avl_node;
     } else {
@@ -76,7 +76,7 @@ int32_t hash_insert(hm_node_ptr node, str_t key, void *page) {
             return -1;
         }
     }
-    
+
     __hash_remake(node, mid_key);
     return 1;
 }
@@ -88,7 +88,7 @@ int32_t hash_delete(hm_node_ptr node, str_t key) {
 
     int32_t mid_key = hash(key, node->dep);
     while (1) {
-        
+
         if (node->len_of_list[mid_key] < MAX_HASH_DEP) {
             //hash_test_tree_print(node->top[mid_key]);
             avlnode_ptr new_avl_node;
@@ -96,7 +96,7 @@ int32_t hash_delete(hm_node_ptr node, str_t key) {
             avlnode_ptr mid_node = node->top[mid_key];
             avl_remove_node(&mid_node, new_avl_node);
             if (new_avl_node) {
-                free(new_avl_node);
+                avl_delete_node(new_avl_node);
             }
             //if (node->top[mid_key]) {
             //    hash_test_tree_print(node->top[mid_key]);
@@ -124,7 +124,7 @@ int32_t hash_erase(hm_node_ptr node) {
             if (node->len_of_list[i] > 0) {
                 avl_erase(node->top[i]);
             }
-            
+
         }
     }
     free(node);
@@ -177,6 +177,6 @@ int32_t __hash_insert_avl_in_hash(hm_node_ptr node, avlnode_ptr go) {
         avlnode_ptr midd = node->top[mid_key];
         avl_insert_node(midd, go);
     }
-    
+
     return 1;
 }

@@ -30,7 +30,7 @@ add_library(disk STATIC ${disk_sources})
 add_library(memory STATIC ${memory_sources})
 
 add_executable(fgdb_test_exe fgdb.c)
-target_link_libraries(fgdb_test_exe arena memory disk buddy vector lruq unity)
+target_link_libraries(fgdb_test_exe arena memory disk buddy vector lruq unity HashMap)
 
 add_executable(hashmap_test_exe hashmap/main.c)
 target_link_libraries(hashmap_test_exe HashMap unity)
@@ -42,3 +42,4 @@ include(CTest)
 
 add_test(hashmap_test hashmap_test_exe)
 add_test(memory_test memory_test_exe)
+add_test(fgdb_test fgdb_test_exe)

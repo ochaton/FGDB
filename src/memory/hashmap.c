@@ -11,7 +11,7 @@
 hashmap_t hashmap_new(void);
 void hashmap_delete(hashmap_t hashmap);
 
-int hashmap_insert_key(hashmap_t hmap, hashmap_key_t * new_key, hashmap_error_t *err);
+int hashmap_insert_key(hashmap_t hmap, hashmap_key_t * key_meta, str_t * key, hashmap_error_t *err);
 hashmap_key_t * hashmap_lookup_key(hashmap_t hmap, str_t * key, hashmap_error_t *err);
 hashmap_key_t * hashmap_delete_key(hashmap_t hmap, str_t * key, hashmap_error_t *err);
 
@@ -29,16 +29,16 @@ void hashmap_delete(hashmap_t hashmap) {
 	assert(hash_erase(hashmap) == 1);
 }
 
-int hashmap_insert_key(hashmap_t hmap, hashmap_key_t * new_key, hashmap_error_t *err) {
+int hashmap_insert_key(hashmap_t hmap, hashmap_key_t * key_meta, str_t * key, hashmap_error_t *err) {
 	*err = HASHMAP_SUCCESS;
-	avlnode_ptr found = hash_search(hmap, *new_key->key);
+	avlnode_ptr found = hash_search(hmap, *key);
 
 	if (found) {
 		*err = HASHMAP_KEY_FOUND;
 		return -1;
 	}
 
-	int result = hash_insert(hmap, *new_key->key, new_key);
+	int result = hash_insert(hmap, *key, key_meta);
 	if (result != 1) {
 		*err = HASHMAP_INTERNAL_ERROR;
 		return -1;
@@ -52,8 +52,8 @@ hashmap_key_t * hashmap_lookup_key(hashmap_t hmap, str_t * key, hashmap_error_t 
 	avlnode_ptr found = hash_search(hmap, *key);
 
 	if (found) {
-		hashmap_key_t * key_found = found->page;
-		return key_found;
+		hashmap_key_t * key_meta = found->meta;
+		return key_meta;
 	}
 
 	return NULL;
@@ -67,12 +67,11 @@ hashmap_key_t * hashmap_delete_key(hashmap_t hmap, str_t * key, hashmap_error_t 
 		return NULL;
 	}
 
-	hashmap_key_t * key_found = (hashmap_key_t *) found->page;
+	hashmap_key_t * key_meta = (hashmap_key_t *) found->meta;
 
 	hashmap_key_t * rv = calloc(1, sizeof(hashmap_key_t));
-	rv->key = key;
-	rv->header_key_id = key_found->header_key_id;
-	rv->page = key_found->page;
+	rv->header_key_id = key_meta->header_key_id;
+	rv->page = key_meta->page;
 
 	int result = hash_delete(hmap, *key);
 	assert(result == 1);
