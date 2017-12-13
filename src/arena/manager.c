@@ -109,16 +109,16 @@ page_header_t * page_value_set(str_t * value, key_meta_t * key) {
 	page_header_t * header = headers_alloc_page(value->size);
 	arena_page_t  * page   = &arena->pages[ header->arena_id ];
 
-	size_t offset = PAGE_SIZE - header->tail_bytes;
-	page_header_key_t * arena_header_key = headers_push_key(header, key, offset);
+	size_t start_from = PAGE_SIZE - header->tail_bytes;
+	page_header_key_t * arena_header_key = headers_push_key(header, key, start_from);
 	key->page   = header->arena_id;
 
-	char * ptr = (char *) page + offset;
+	char * ptr = (char *) page + start_from;
 	*(typeof(value->size) *) ptr = value->size;
 	ptr += sizeof(value->size);
 	memcpy(ptr, value->ptr, value->size);
 
-	header->tail_bytes -= value->size;
+	header->tail_bytes -= value->size + sizeof(value->size);
 	// header->lsn = get_lsn();
 
 	return header;
@@ -182,14 +182,16 @@ page_header_t * page_value_unset(key_meta_t * key, str_t * value) {
 
 		/* Return value from page */
 
-		value->size = *(typeof(value->size) *) &page[ deleted_header_key->offset ];
-		value->ptr  = (char *) &page[ deleted_header_key->offset ] + sizeof(typeof(value->size));
+		char * start_from = (char *) page + deleted_header_key->offset;
+		value->size = *(typeof(value->size) *) start_from;
+		value->ptr  = start_from + sizeof(value->size);
 
 		free(deleted_header_key);
 
 		/* Mark page as dirty for further defragmentation */
 
 		header->state = PAGE_DIRTY;
+		header->fragmentated_bytes += value->size;
 
 		return header;
 	}

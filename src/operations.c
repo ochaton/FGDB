@@ -71,7 +71,6 @@ void operation_delete(req_t * req, hashmap_t hashmap) {
 		req->log->info(req->log, "Key not found");
 		reply.code = REPLY_ERROR;
 		reply.err  = KEY_NOT_FOUND;
-		reply.cmd  = req->msg->cmd;
 		request_reply(req, &reply);
 		return;
 	}
@@ -87,6 +86,8 @@ void operation_delete(req_t * req, hashmap_t hashmap) {
 
 	reply.code = REPLY_OK;
 	reply.cmd = req->msg->cmd;
+
+	req->log->debug(req->log, "Replying value # = %ld {%*.*s}", reply.val.size, reply.val.size, reply.val.size, reply.val.ptr);
 
 	request_reply(req, &reply);
 }
@@ -123,7 +124,12 @@ void operation_insert(req_t * req, hashmap_t hashmap) {
 
 	key_meta_t * new_key_meta = (key_meta_t *) calloc(1, sizeof(key_meta_t));
 
-	req->log->debug(req->log, "Inserting new key=>value");
+	req->log->debug(req->log, "Inserting new key {%*.*s} => value {%*.*s}",
+		req->msg->key.size, req->msg->key.size,
+		req->msg->key.ptr,
+		req->msg->val.size, req->msg->val.size,
+		req->msg->val.ptr
+	);
 	page_header_t * header = page_value_set(&req->msg->val, new_key_meta);
 
 	if (!header) {

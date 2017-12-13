@@ -50,10 +50,9 @@ void vector_delete(vector *v, uint index) {
 
     for (size_t i = index; i < v->total - 1; i++) {
         v->items[i] = v->items[i + 1];
-        v->items[i + 1] = NULL;
     }
 
-    v->total--;
+    v->items[ --v->total ] = NULL;
 
     if (v->total > 0 && v->total == v->capacity / 4)
         vector_resize(v, v->capacity / 2);

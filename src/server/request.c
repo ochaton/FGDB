@@ -31,7 +31,7 @@ void init_request(int fd, ev_server * server) {
 		return;
 	}
 
-	req->log->debug(req->log, "setnonblock successfull");
+	// req->log->debug(req->log, "setnonblock successfull");
 
 	req->server = server;
 	req->state  = INIT;
@@ -47,10 +47,10 @@ void init_request(int fd, ev_server * server) {
 void destroy_request(req_t * req) {
 	if (!req) return;
 	if (req->buf) destroy_buffer(req->buf);
-	req->log->debug(req->log, "Buffer destroyed");
+	// req->log->debug(req->log, "Buffer destroyed");
 
 	if (req->msg) destroy_message(req->msg);
-	req->log->debug(req->log, "Message destroyed");
+	// req->log->debug(req->log, "Message destroyed");
 
 	ev_io_stop(EV_DEFAULT_ &req->io);
 	close(req->fd);
@@ -69,7 +69,7 @@ static void parse_request(EV_P_ ev_io *w, int revents) {
 	switch (req->state) {
 		case INIT:
 		{
-			req->log->debug(req->log, "Parsing INIT");
+			// req->log->debug(req->log, "Parsing INIT");
 			char buffer[1024] = {};
 			char * pbuf = &buffer[0];
 
@@ -85,7 +85,7 @@ static void parse_request(EV_P_ ev_io *w, int revents) {
 			uint32_t msg_len = *(uint32_t *) pbuf;
 			pbuf += sizeof(msg_len);
 
-			req->log->debug(req->log, "Message len = %ld", msg_len);
+			// req->log->debug(req->log, "Message len = %ld", msg_len);
 
 			if (msg_len > MAX_MESSAGE_SIZE) {
 				req->log->crit(req->log, "Message is too long %d > %d", msg_len, MAX_MESSAGE_SIZE);
@@ -102,12 +102,12 @@ static void parse_request(EV_P_ ev_io *w, int revents) {
 			size_t bytes2copy = bytes > msg_len ? msg_len : bytes;
 			buffer_push(req->buf, pbuf, bytes2copy);
 
-			req->log->debug(req->log, "Buffer push succesfull");
+			// req->log->debug(req->log, "Buffer push succesfull");
 			req->state = READ;
 		}
 		case READ:
 		{
-			req->log->debug(req->log, "Parsing READ");
+			// req->log->debug(req->log, "Parsing READ");
 			if (buffer_left(req->buf) > 0) {
 				if (-1 == (bytes = recv(req->fd, req->buf->end, buffer_left(req->buf), 0))) {
 					if (errno == EAGAIN || errno == EINTR) {
@@ -137,7 +137,7 @@ static void parse_request(EV_P_ ev_io *w, int revents) {
 			msgpack_unpacked_init(&unpacked);
 
 			msgpack_unpack_return ret = msgpack_unpack_next(&unpacked, req->buf->start, req->buf->used, NULL);
-			req->log->debug(req->log, "Ret = %d", ret);
+			// req->log->debug(req->log, "Ret = %d", ret);
 			if (MSGPACK_UNPACK_PARSE_ERROR == ret) {
 				req->log->error(req->log, "Message-Pack error: MSGPACK_UNPACK_PARSE_ERROR");
 				return destroy_request(req);
@@ -167,7 +167,7 @@ static void parse_request(EV_P_ ev_io *w, int revents) {
 				return destroy_request(req);
 			}
 
-			req->log->debug(req->log, "Unpack finished successfully");
+			// req->log->debug(req->log, "Unpack finished successfully");
 
 			msgpack_unpacked_destroy(&unpacked);
 			buffer_free(req->buf);
@@ -300,7 +300,7 @@ static void write_reply(EV_P_ ev_io *w, int revents) {
 		}
 	}
 
-	req->log->debug(req->log, "Wrote ebal %ld", bytes);
+	req->log->debug(req->log, "Written %ld bytes", bytes);
 
 	req->buf->start += bytes;
 	req->buf->used  -= bytes;
