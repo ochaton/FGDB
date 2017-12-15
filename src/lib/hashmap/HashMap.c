@@ -1,7 +1,8 @@
 // This is a personal academic project. Dear PVS-Studio, please check it.
 // PVS-Studio Static Code Analyzer for C, C++ and C#: http://www.viva64.com
 #include "HashMap.h"
-/*void hash_test_tree_print(avlnode_ptr go) {
+
+void hash_test_tree_print(avlnode_ptr go) {
     if (!go) {
         return;
     }
@@ -11,11 +12,16 @@
     }
     hash_test_tree_print(go->left);
     hash_test_tree_print(go->right);
-    printf("Node is %s\n",go->key.ptr);
+    printf("%s\n",go->key.ptr);
     if (test_mid) {
-        printf("End of  tree \n\n");
+    //    printf("End of  tree \n\n");
     }
-}*/
+}
+void hash_test_print(hm_node_ptr go) {
+    for (int32_t i = 0; i < MAX_HASH_NODE; i++) {
+        hash_test_tree_print(go->top[i]);
+    }
+}
 int32_t hash_new_node(hm_node_ptr *node, uint32_t dep) {
     //create new hash table
     if (!node) {
@@ -38,10 +44,19 @@ avlnode_ptr hash_search(hm_node_ptr node, str_t key) {
     if (!node) {
         return NULL;
     }
-    int32_t mid_key = hash(key, node->dep);
+    uint32_t mid_key = hash(key, node->dep);
     while (1) {
         if (node->len_of_list[mid_key] < MAX_HASH_DEP) {
-            return avl_search(node->top[mid_key], key);
+            /*if (key.ptr[0] == 'R') {
+                hash_test_tree_print(node->top[mid_key]);
+                printf("\n");
+            }*/
+            avlnode_ptr mid = avl_search(node->top[mid_key], key);
+            //return avl_search(node->top[mid_key], key);
+            if (mid) {
+                printf("MMM %s\n", mid->key.ptr);
+            }
+            return mid;
         } else {
             node = node->top[mid_key];
             mid_key = hash(key, node->dep);
@@ -54,19 +69,15 @@ int32_t hash_insert(hm_node_ptr node, str_t key, void *meta) {
         return -1;
     }
 
-    int32_t mid_key = hash(key, node->dep);
-    //printf("mid_key %d\n",mid_key);
+    uint32_t mid_key = hash(key, node->dep);
     while (node->len_of_list[mid_key] > MAX_HASH_DEP) {
-
         node = node->top[mid_key];
         mid_key = hash(key, node->dep);
     }
 
     node->len_of_list[mid_key]++;
-
     avlnode_ptr new_avl_node;
     avl_new_node(&new_avl_node, key, meta);
-
     if (!node->top[mid_key]) {
         node->top[mid_key] = new_avl_node;
     } else {
@@ -76,7 +87,6 @@ int32_t hash_insert(hm_node_ptr node, str_t key, void *meta) {
             return -1;
         }
     }
-
     __hash_remake(node, mid_key);
     return 1;
 }
@@ -86,7 +96,7 @@ int32_t hash_delete(hm_node_ptr node, str_t key) {
         return 0;
     }
 
-    int32_t mid_key = hash(key, node->dep);
+    uint32_t mid_key = hash(key, node->dep);
     while (1) {
 
         if (node->len_of_list[mid_key] < MAX_HASH_DEP) {
@@ -136,6 +146,7 @@ int32_t __hash_remake(hm_node_ptr node, uint32_t index) {
     if (node->len_of_list[index] != MAX_HASH_DEP) {
         return 0;
     }
+    printf("Remake %u\n", index);
     hm_node_ptr new_node;
     hash_new_node(&new_node, node->dep+1);
     avlnode_ptr go = node->top[index];

@@ -38,5 +38,8 @@ void avl_erase(avlnode_ptr node);
 int32_t avl_calc_balance(avlnode_ptr node);
 void avl_calc_hight(avlnode_ptr node);
 void avl_rebalance(avlnode_ptr *node);
-
+//        test            ///////////////
+/////////////////////////////////////////
+void avl_test_tree_print(avlnode_ptr go);
+/////////////////////////////////////////
 #endif
