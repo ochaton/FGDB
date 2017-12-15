@@ -2,9 +2,9 @@
 // PVS-Studio Static Code Analyzer for C, C++ and C#: http://www.viva64.com
 #include "HashMap.h"
 
-int32_t hash (str_t key,int dep) {
+uint32_t hash (str_t key,int dep) {
     // `dep` changes constant in hashf
-    int32_t mid = 0, p, m;
+    uint32_t mid = 0, p, m;
     switch (dep) {
         case 1: p = 57; m = MAX_HASH_NODE; break;
         case 2: p = 97; m = MAX_HASH_NODE; break;
