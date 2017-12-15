@@ -4,9 +4,10 @@
 #include <unity.h>
 #include <assert.h>
 #include <stdio.h>
+#include <stdlib.h>
 
 hm_node_ptr hashmap;
-
+const int32_t MAX_N = 100;
 void setUp(void) {
 	uint32_t result = hash_new_node(&hashmap, 0);
 	assert(hashmap);
@@ -140,12 +141,142 @@ void test4() {
 		TEST_ASSERT_MESSAGE(found->meta == &metas[5], "Save pointer to meta");
 	}
 }
-
+void test5() {
+	str_t keys[10000];
+	int pages[10000];
+	for (int i = 0; i < 1000; i++) {
+		pages[i] = i;
+		keys[i].size = i;
+		keys[i].ptr = (char *) malloc( (i + 1) * sizeof(char));
+		for (int j = 0; j <= i; j++) {
+			keys[i].ptr[j] = 'a';
+		}
+		keys[i].ptr[i] ++;
+	}
+	for (int i = 0; i < 1000; i++) {
+		TEST_ASSERT_MESSAGE(hash_insert(hashmap, keys[i], &pages[i]) == 1, "Must inserted with status = 1");
+	}
+	for (int i = 0; i < 1000; i++) {
+		avlnode_ptr found;
+		found = hash_search(hashmap, keys[i]);
+		TEST_ASSERT_NOT_NULL(found);
+		TEST_ASSERT_EQUAL_STRING_LEN(found->key.ptr, keys[i].ptr, keys[i].size);
+		TEST_ASSERT_MESSAGE(found->meta == &pages[i], "Save pointer to meta");
+	}
+	for (int i = 0; i < 1000; i++) {
+		free(keys[i].ptr);
+	}
+}
+void test6() {
+	str_t keys[10000];
+	int pages[10000];
+	for (int i = 0; i < 1000; i++) {
+		pages[i] = i;
+		keys[i].size = i;
+		keys[i].ptr = (char *) malloc( (i + 1) * sizeof(char));
+		for (int j = 0; j <= i; j++) {
+			keys[i].ptr[j] = 'a';
+		}
+		keys[i].ptr[i] ++;
+	}
+	for (int i = 0; i < 1000; i++) {
+		TEST_ASSERT_MESSAGE(hash_insert(hashmap, keys[i], &pages[i]) == 1, "Must inserted with status = 1");
+	}
+	for (int i = 0; i < 1000; i++) {
+		avlnode_ptr found;
+		found = hash_search(hashmap, keys[i]);
+		TEST_ASSERT_NOT_NULL(found);
+		TEST_ASSERT_EQUAL_STRING_LEN(found->key.ptr, keys[i].ptr, keys[i].size);
+		TEST_ASSERT_MESSAGE(found->meta == &pages[i], "Save pointer to meta");
+	}
+	for (int i = 0; i < 1000; i++) {
+		TEST_ASSERT_MESSAGE(hash_delete(hashmap, keys[i]) == 1, "Must be deleted with status = 1");
+	}
+	for (int i = 0; i < 1000; i++) {
+		free(keys[i].ptr);
+	}
+}
+void test7() {
+	str_t keys[10000];
+	int pages[10000];
+	for (int i = 0; i < 1000; i++) {
+		pages[i] = i;
+		keys[i].size = i;
+		keys[i].ptr = (char *) malloc( (i + 1) * sizeof(char));
+		for (int j = 0; j <= i; j++) {
+			keys[i].ptr[j] = 'a';
+		}
+		keys[i].ptr[i] ++;
+	}
+	for (int i = 0; i < 1000; i++) {
+		TEST_ASSERT_MESSAGE(hash_insert(hashmap, keys[i], &pages[i]) == 1, "Must inserted with status = 1");
+	}
+	for (int i = 0; i < 1000; i++) {
+		avlnode_ptr found;
+		found = hash_search(hashmap, keys[i]);
+		TEST_ASSERT_NOT_NULL(found);
+		TEST_ASSERT_EQUAL_STRING_LEN(found->key.ptr, keys[i].ptr, keys[i].size);
+		TEST_ASSERT_MESSAGE(found->meta == &pages[i], "Save pointer to meta");
+	}
+	for (int i = 0; i < 1000; i++) {
+		TEST_ASSERT_MESSAGE(hash_delete(hashmap, keys[i]) == 1, "Must be deleted with status = 1");
+	}
+	for (int i = 0; i < 1000; i++) {
+		avlnode_ptr found;
+		found = hash_search(hashmap, keys[i]);
+		TEST_ASSERT_NULL(found);
+	}
+	for (int i = 0; i < 1000; i++) {
+		free(keys[i].ptr);
+	}
+}
+void test8() {
+	str_t keys[MAX_N + 1];
+	int pages[MAX_N + 1];
+	int flag[MAX_N + 1];
+	for (int i = 0; i < MAX_N; i++) {
+		pages[i] = i;
+		keys[i].size = (i * 7 + 57) % 7 + (MAX_N - i + 9) % 5 + 4 ;
+		keys[i].ptr = (char *) malloc( keys[i].size * sizeof(char));
+		for (int j = 0; j < keys[i].size; j++) {
+			keys[i].ptr[j] =(char) ((13 * j + 27 * i + 7) % 100 + 38 );
+		}
+	}
+	for (int i = 0; i < MAX_N; i++) {
+		avlnode_ptr found;
+		TEST_ASSERT_MESSAGE(hash_insert(hashmap, keys[i], &pages[i]) == 1, "Must inserted with status = 1");
+		if (i == 31) {
+			found = hash_search(hashmap, keys[i]);
+		}
+	}
+	/*for (int i = 0; i < MAX_N; i++) {
+		avlnode_ptr found;
+		found = hash_search(hashmap, keys[i]);
+		if (!found) {
+			printf("Err in step %d\n",i );
+		}
+		TEST_ASSERT_NOT_NULL(found);
+		TEST_ASSERT_EQUAL_STRING_LEN(found->key.ptr, keys[i].ptr, keys[i].size);
+		if (flag[i]) {
+			TEST_ASSERT_MESSAGE(found->meta == &pages[i], "Save pointer to meta");
+		} else {
+			TEST_ASSERT_MESSAGE(found->meta != &pages[i], "Save pointer to meta");
+		}
+	}
+	*/
+	for (int i = 0; i < MAX_N; i++) {
+		free(keys[i].ptr);
+	}
+}
 int main(void) {
 	UNITY_BEGIN();
 	RUN_TEST(test1);
 	RUN_TEST(test2);
 	RUN_TEST(test3);
 	RUN_TEST(test4);
+	RUN_TEST(test5);
+	RUN_TEST(test6);
+	RUN_TEST(test7);
+	RUN_TEST(test8);
 	return UNITY_END();
 }
