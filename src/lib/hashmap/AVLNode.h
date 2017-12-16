@@ -12,10 +12,6 @@ typedef struct AVLNode * avlnode_ptr;
 
 #include "common.h"
 
-enum {
-    MAX_KEY_LEN = 1024,
-};
-
 typedef struct AVLNode
 {
     str_t key;
@@ -29,17 +25,16 @@ int32_t max_32t(int32_t first, int32_t second);
 
 // methods
 int32_t avl_new_node(avlnode_ptr *new_node, str_t key, void *meta);
-avlnode_ptr avl_search(avlnode_ptr node, str_t key);
-int32_t avl_insert_node(avlnode_ptr node, avlnode_ptr node_new);
+//    avlnode_ptr avl_search(avlnode_ptr node, str_t key);
+int32_t avl_insert_node(avlnode_ptr *node, avlnode_ptr node_new);
 int32_t avl_remove_node(avlnode_ptr *node, avlnode_ptr node_new);
-int32_t avl_delete_node(avlnode_ptr node);
+int32_t avl_delete_node(avlnode_ptr *node);
 void avl_erase(avlnode_ptr node);
 
 int32_t avl_calc_balance(avlnode_ptr node);
 void avl_calc_hight(avlnode_ptr node);
 void avl_rebalance(avlnode_ptr *node);
-//        test            ///////////////
-/////////////////////////////////////////
-void avl_test_tree_print(avlnode_ptr go);
-/////////////////////////////////////////
+
+avlnode_ptr avl_search(avlnode_ptr node, str_t key);
+
 #endif
