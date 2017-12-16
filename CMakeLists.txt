@@ -21,6 +21,7 @@ include_directories(src/)
 add_subdirectory(src/lib/buddy buddy)
 add_subdirectory(src/lib/vector vector)
 add_subdirectory(src/lru/ lruq)
+add_subdirectory(src/wal/ wal)
 add_subdirectory(src/lib/hashmap hashmap)
 
 add_subdirectory(src/server)
@@ -45,7 +46,7 @@ add_library(memory STATIC ${memory_sources})
 add_library(operations STATIC ${operation_sources})
 
 add_executable(fgdb src/main.c)
-target_link_libraries(fgdb arena memory disk buddy vector lruq HashMap server operations transaction_queue pthread)
+target_link_libraries(fgdb arena memory disk buddy vector lruq wal HashMap server operations transaction_queue pthread)
 
 # add_executable(queue_test test/queue_test.c)
 # target_link_libraries(queue_test transaction_queue request pthread)

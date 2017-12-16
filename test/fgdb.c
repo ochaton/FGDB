@@ -50,7 +50,6 @@ struct keyval {
 };
 
 void test1(void) {
-
 	struct keyval kv = {
 		{ 3, "key" },
 		{ 5, "value" }
@@ -111,8 +110,18 @@ void test1(void) {
 	TEST_ASSERT_EQUAL_STRING_LEN(retval.ptr, kv.val.ptr, retval.size);
 }
 
+void test2(void) {
+	msg_t m = {
+		INSERT,
+		{ 3, "key" },
+		{ 5, "value" }
+	};
+	wal_logger_t* l = new_wal_logger(0, 0, 1);
+}
+
 int main(void) {
 	UNITY_BEGIN();
 	RUN_TEST(test1);
+	RUN_TEST(test2);
 	return UNITY_END();
 }

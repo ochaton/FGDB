@@ -45,10 +45,10 @@ binary_record_t* to_binary(wal_log_record_t* r) {
 	br->size = 8+8+1+2+(r->key.size)+2+(r->val.size);
 	br->ptr  = malloc(br->size * sizeof(char));
 	char* p = br->ptr;
-	(lsn_t)     *p[0]   = r->LSN;
-	(page_id_t) *p[8]   = r->pid;
-	(msg_cmd_t) *p[16]  = r->operation;
-	(uint16_t)  *p[17]  = r->key.size;
+	(lsn_t)         *p[0]   = r->LSN;
+	(page_id_t)     *p[8]   = r->pid;
+	(msg_command_t) *p[16]  = r->operation;
+	(uint16_t)      *p[17]  = r->key.size;
 
 	strcpy(p[19], r->key.ptr, r->key.size);
 	(uint16_t)  *p[19+(r->key.size)] = r->val.size;

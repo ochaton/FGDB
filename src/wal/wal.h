@@ -5,7 +5,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 
-#include "include/common.h"
+#include "common.h"
 #include "server/message.h"
 #include "transactions/queue.h"
 
@@ -16,11 +16,11 @@
 typedef uint64_t lsn_t;
 
 typedef struct {
-	lsn_t  LSN;
-	page_id_t pid;
-	str_t     key;
-	srt_t     val;
-	enum msg_cmd_t operation:8;
+	lsn_t              LSN;
+	page_id_t          pid;
+	str_t              key;
+	str_t              val;
+	enum msg_command_t operation:8;
 } wal_log_record_t;
 
 typedef struct {
@@ -34,7 +34,7 @@ typedef struct {
 	char*    ptr;
 } binary_record_t;
 
-wal_logger_t* new_wal_logger(lsn_t LSN, lsn_t fLSN, char* path);
+wal_logger_t* new_wal_logger(lsn_t LSN, lsn_t fLSN, uint32_t log_id);
 
 lsn_t write_log(wal_logger_t* w, transaction_t* t);
 
