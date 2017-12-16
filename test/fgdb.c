@@ -13,6 +13,7 @@
 #include "arena/meta.h"
 #include "lru/lruq.h"
 #include "wal/wal.h"
+#include "server/message.h"
 
 #include "unity.h"
 
@@ -116,7 +117,17 @@ void test2(void) {
 		{ 3, "key" },
 		{ 5, "value" }
 	};
-	wal_logger_t* l = new_wal_logger(0, 0, 1);
+	transaction_t     t = { NULL, &m };
+	wal_logger_t*     l = new_wal_logger(1234, 1230, 1);
+	wal_log_record_t* r = to_wal_record(l, &t);
+	TEST_ASSERT_MESSAGE(r->LSN == 1235, "LSN must be old_LSN + 1");
+	binary_record_t*  b = to_binary(r);
+	TEST_ASSERT_MESSAGE(*((lsn_t*)    &b->ptr[0])  == 1235,   "LSN is not gone");
+	TEST_ASSERT_MESSAGE(*((char*)     &b->ptr[8])  == INSERT, "OPERATION is not gone");
+	TEST_ASSERT_MESSAGE(*((uint16_t*) &b->ptr[9])  == 3,      "KEY SIZE is not gone");
+	TEST_ASSERT_EQUAL_STRING_LEN(m.key.ptr, &b->ptr[11], 3);
+	TEST_ASSERT_MESSAGE(*((uint16_t*) &b->ptr[14]) == 5,      "VAL SIZE is not gone");
+	TEST_ASSERT_EQUAL_STRING_LEN(m.val.ptr, &b->ptr[16], 5);
 }
 
 int main(void) {
