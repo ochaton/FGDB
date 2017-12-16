@@ -49,7 +49,7 @@ avlnode_ptr avl_search(avlnode_ptr node, str_t key) {
     if (!key_comp(node->key, key)) {
         return node;
     } else {
-        if (key_comp(node->key, key) < 0) {
+        if (key_comp(node->key, key) > 0) {
             return avl_search(node->right, key);
         } else {
             return avl_search(node->left, key);

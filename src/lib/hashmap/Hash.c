@@ -4,6 +4,7 @@
 
 uint32_t hash (str_t key,int dep) {
     // `dep` changes constant in hashf
+    // TODO: assert if one of p's is common-prime with MAX_HASH_NODE
     uint32_t mid = 0, p, m;
     switch (dep) {
         case 1: p = 57; m = MAX_HASH_NODE; break;
@@ -13,7 +14,8 @@ uint32_t hash (str_t key,int dep) {
         default: p = 89; m = MAX_HASH_NODE; break;
     }
     for (uint32_t i = 0; i < key.size; i++){
-        mid = (mid + p * ((int)(key.ptr[i]))) % m;
+        mid = mid + p * key.ptr[i] % m;
+        mid %= m;
     }
     return mid;
 }

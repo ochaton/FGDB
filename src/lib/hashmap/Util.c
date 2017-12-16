@@ -3,7 +3,7 @@
 #include "AVLNode.h"
 
 int32_t key_comp(str_t key_first, str_t key_second) {
-    if ((key_first.size - key_second.size) != 0) {
+    if (key_first.size != key_second.size) {
         return key_second.size - key_first.size;
     }
     return memcmp(key_second.ptr, key_first.ptr, key_first.size);

@@ -141,6 +141,7 @@ void test4() {
 		TEST_ASSERT_MESSAGE(found->meta == &metas[5], "Save pointer to meta");
 	}
 }
+
 void test5() {
 	str_t keys[10000];
 	int pages[10000];
@@ -167,6 +168,7 @@ void test5() {
 		free(keys[i].ptr);
 	}
 }
+
 void test6() {
 	str_t keys[10000];
 	int pages[10000];
@@ -196,6 +198,7 @@ void test6() {
 		free(keys[i].ptr);
 	}
 }
+
 void test7() {
 	str_t keys[10000];
 	int pages[10000];
@@ -230,6 +233,7 @@ void test7() {
 		free(keys[i].ptr);
 	}
 }
+
 void test8() {
 	str_t keys[MAX_N + 1];
 	int pages[MAX_N + 1];
@@ -237,7 +241,7 @@ void test8() {
 	for (int i = 0; i < MAX_N; i++) {
 		pages[i] = i;
 		keys[i].size = (i * 7 + 57) % 7 + (MAX_N - i + 9) % 5 + 4 ;
-		keys[i].ptr = (char *) malloc( keys[i].size * sizeof(char));
+		keys[i].ptr = (char *) malloc(keys[i].size);
 		for (int j = 0; j < keys[i].size; j++) {
 			keys[i].ptr[j] =(char) ((13 * j + 27 * i + 7) % 100 + 38 );
 		}
@@ -245,9 +249,7 @@ void test8() {
 	for (int i = 0; i < MAX_N; i++) {
 		avlnode_ptr found;
 		TEST_ASSERT_MESSAGE(hash_insert(hashmap, keys[i], &pages[i]) == 1, "Must inserted with status = 1");
-		if (i == 31) {
-			found = hash_search(hashmap, keys[i]);
-		}
+		TEST_ASSERT_MESSAGE(hash_search(hashmap, keys[i]), "Must be found");
 	}
 	/*for (int i = 0; i < MAX_N; i++) {
 		avlnode_ptr found;
@@ -268,6 +270,7 @@ void test8() {
 		free(keys[i].ptr);
 	}
 }
+
 int main(void) {
 	UNITY_BEGIN();
 	RUN_TEST(test1);
