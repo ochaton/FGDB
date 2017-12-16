@@ -9,11 +9,11 @@ void vector_init(vector *v, size_t capacity) {
     v->items = malloc(sizeof(void *) * v->capacity);
 }
 
-int vector_total(vector *v) {
+size_t vector_total(vector *v) {
     return v->total;
 }
 
-static void vector_resize(vector *v, int capacity) {
+static void vector_resize(vector *v, size_t capacity) {
     #ifdef DEBUG_ON
     printf("vector_resize: %d to %d\n", v->capacity, capacity);
     #endif
@@ -32,28 +32,27 @@ void vector_add(vector *v, void *item) {
 }
 
 void vector_set(vector *v, uint index, void *item) {
-    if (index >= 0 && index < v->total)
+    if (index < v->total)
         v->items[index] = item;
 }
 
 void *vector_get(vector *v, uint index) {
-    if (index >= 0 && index < v->total)
+    if (index < v->total)
         return v->items[index];
     return NULL;
 }
 
 void vector_delete(vector *v, uint index) {
-    if (index < 0 || index >= v->total)
+    if (index >= v->total)
         return;
 
     v->items[index] = NULL;
 
-    for (int i = index; i < v->total - 1; i++) {
+    for (size_t i = index; i < v->total - 1; i++) {
         v->items[i] = v->items[i + 1];
-        v->items[i + 1] = NULL;
     }
 
-    v->total--;
+    v->items[ --v->total ] = NULL;
 
     if (v->total > 0 && v->total == v->capacity / 4)
         vector_resize(v, v->capacity / 2);

@@ -4,33 +4,28 @@
 #include <stddef.h>
 #include <stdint.h>
 #include "common.h"
+#include "lib/hashmap/HashMap.h"
 
-// Import fast structure to keep keys
-// uses hash-avl-tree
+typedef struct key_meta_t {
+	page_header_key_id_t header_key_id;        /* Pointer to offset inside page (stored inside headers of arena-pages) */
+	page_id_t page;                            /* Page identificator. Storing this we can find the page, where stored value */
+} key_meta_t;
 
-// #include "lib/hashmap/HashMap.h"
-typedef struct hashmap_key {
-	str_t key;
-	page_id_t page;
-	page_header_key_id_t header_key_id;
-} hashmap_key_t;
+typedef struct HashMap * hashmap_t;
 
-typedef struct {
-	size_t size, used;
-	hashmap_key_t top[1];
-} hashmap_t;
+hashmap_t hashmap_new(void);
+void hashmap_delete(hashmap_t hashmap);
 
 typedef enum {
 	HASHMAP_SUCCESS,
 	HASHMAP_KEY_FOUND,
 	HASHMAP_NO_SPACE_LEFT,
+	HASHMAP_INTERNAL_ERROR,
 } hashmap_error_t;
 
-hashmap_t * hashmap_new(size_t max_keys);
-void hashmap_delete(hashmap_t * hmap);
-hashmap_key_t * hashmap_insert_key(hashmap_t * hmap, hashmap_key_t * new_key, hashmap_error_t *err);
-hashmap_key_t * hashmap_lookup_key(hashmap_t * hmap, str_t * key);
-hashmap_key_t * hashmap_delete_key(hashmap_t * hmap, str_t * key);
+int hashmap_insert_key(hashmap_t hmap, key_meta_t * key_meta, str_t * key, hashmap_error_t *err);
+key_meta_t * hashmap_lookup_key(hashmap_t hmap, str_t * key, hashmap_error_t *err);
+key_meta_t * hashmap_delete_key(hashmap_t hmap, str_t * key, hashmap_error_t *err);
 
 extern const char * hashmap_error[];
 

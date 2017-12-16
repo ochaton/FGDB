@@ -14,8 +14,7 @@ use Data::Dumper;
 
 use constant KEYS_AMOUNT => 3;
 
-sub req {
-	my %params = @_;
+sub req ($$) {
 	return FGDB::send_message(@_);
 }
 
@@ -51,8 +50,51 @@ sub do_selects {
 	}
 }
 
+sub wow_test {
+	is_deeply req (INSERT => { "key1" => "val1" }), {
+		code => "OK",
+		status => "CODE_OK",
+	}, "Insert-key1";
+
+	is_deeply req (SELECT => "key1"), {
+		code  => "OK",
+		value => "val1",
+	}, "Select-key1";
+
+	is_deeply req (INSERT => { "key2" => "val2" }), {
+		code => "OK",
+		status => "CODE_OK",
+	}, "Insert-key2";
+
+	is_deeply req (SELECT => "key2"), {
+		code  => "OK",
+		value => "val2",
+	}, "Select-key2";
+
+	is_deeply req (DELETE => "key1"), {
+		code  => "OK",
+		value => "val1",
+	}, "Delete-key1";
+
+	is_deeply req (SELECT => "key1"), {
+		code  => "ERROR",
+		error => "KEY_NOT_FOUND",
+	}, "Select-key1";
+
+	is_deeply req (DELETE => "key2"), {
+		code  => "OK",
+		value => "val2",
+	}, "Delete-key2";
+
+	is_deeply req (SELECT => "key2"), {
+		code  => "ERROR",
+		error => "KEY_NOT_FOUND",
+	}, "Select-key2";
+}
+
 sub main {
 	my $answers = [];
+
 	map { $answers->[$_] = { "key$_" => "value$_" } } (1..KEYS_AMOUNT);
 	do_peeks();
 	diag("PEEKS DONE------------");
@@ -87,8 +129,17 @@ sub main {
 			is($_[0]->{value}, $_[1]);
 		},
 	);
+	diag("SELECTS DONE----------");
+	do_deletes(
+		sub {
+			is($_[0]->{code}, 'OK');
+			is($_[0]->{value}, $_[1]);
+		},
+	);
+	diag("DELETES DONE----------");
 }
 
+wow_test();
 main();
 
 done_testing;

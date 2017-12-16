@@ -6,8 +6,6 @@
 
 #include "common.h"
 
-// uint16_t * page_tail_bytes_container;
-
 static page_id_t page_value_alloc(size_t bytes);
 static arena_page_id_t heat_page(page_id_t page_id);
 
@@ -73,7 +71,7 @@ page_header_t * headers_new_page(void) {
 page_header_t * headers_alloc_page(size_t value_size) {
 	page_header_t * prefered = NULL;
 	for (size_t page_id = 0; page_id < arena->headers->total; page_id++) {
-		register page_header_t * header;
+		register page_header_t * header = VECTOR_GET(arena->headers[0], page_header_t*, page_id);
 		if (header->tail_bytes >= value_size) {
 			return header;
 		} else if (
@@ -96,36 +94,37 @@ page_header_t * headers_alloc_page(size_t value_size) {
 	return prefered;
 }
 
-page_header_key_t * headers_push_key(page_header_t * header, hashmap_key_t * key, off_t page_offset) {
+page_header_key_t * headers_push_key(page_header_t * header, key_meta_t * key, off_t page_offset) {
 	page_header_key_t * page_key = (page_header_key_t *) malloc(sizeof(page_header_key_t));
 	page_key->offset = page_offset;
 
 	vector_add(header->keys, page_key);
 	key->header_key_id = header->keys->total - 1; // last one
+	page_key->key_meta_ptr = key;
 	return page_key;
 }
 
 // Returns offset in page
-page_header_t * page_value_set(str_t * value, hashmap_key_t * key) {
+page_header_t * page_value_set(str_t * value, key_meta_t * key) {
 	page_header_t * header = headers_alloc_page(value->size);
 	arena_page_t  * page   = &arena->pages[ header->arena_id ];
 
-	size_t offset = PAGE_SIZE - header->tail_bytes;
-	page_header_key_t * arena_header_key = headers_push_key(header, key, offset);
+	size_t start_from = PAGE_SIZE - header->tail_bytes;
+	page_header_key_t * arena_header_key = headers_push_key(header, key, start_from);
 	key->page   = header->arena_id;
 
-	char * ptr = (char *) page + offset;
+	char * ptr = (char *) page + start_from;
 	*(typeof(value->size) *) ptr = value->size;
 	ptr += sizeof(value->size);
 	memcpy(ptr, value->ptr, value->size);
 
-	header->tail_bytes -= value->size;
+	header->tail_bytes -= value->size + sizeof(value->size);
 	// header->lsn = get_lsn();
 
 	return header;
 }
 
-page_header_t * page_value_get(hashmap_key_t * key, str_t * retval) {
+page_header_t * page_value_get(key_meta_t * key, str_t * retval) {
 	page_header_t * header = arena->headers->items[ key->page ];
 
 	if (header->location == PAGE_INDISK) {
@@ -153,8 +152,10 @@ page_header_t * page_value_get(hashmap_key_t * key, str_t * retval) {
 	return NULL;
 }
 
-page_header_t * page_value_unset(hashmap_key_t * key, str_t * value) {
+page_header_t * page_value_unset(key_meta_t * key, str_t * value) {
 	page_header_t * header = arena->headers->items[ key->page ];
+
+	/* Heat page if it's indisk */
 
 	if (header->location == PAGE_INDISK) {
 		header->arena_id = heat_page(header->page_id);
@@ -162,17 +163,35 @@ page_header_t * page_value_unset(hashmap_key_t * key, str_t * value) {
 	}
 
 	if (header->location == PAGE_INMEMORY) {
-		arena_page_t * page = &arena->pages[ header->arena_id ];
-		page_header_key_t * header_key = (page_header_key_t *) VECTOR_GET(header->keys[0], page_header_key_t*, key->header_key_id);
 
+		/* Get arena-page */
+
+		arena_page_t * page = &arena->pages[ header->arena_id ];
+
+		/* Take over header_key we deleted */
+
+		page_header_key_t * deleted_header_key = VECTOR_GET(header->keys[0], page_header_key_t*, key->header_key_id);
 		vector_delete(header->keys, key->header_key_id);
 
-		value->size = *(typeof(value->size) *) &page[ header_key->offset ];
-		value->ptr  = (char *) &page[ header_key->offset ] + sizeof(typeof(value->size));
+		/* Recount header_key index for all keys inside this page */
 
-		free(header_key);
+		for (size_t key_id = key->header_key_id; key_id < header->keys->total; key_id++) {
+			page_header_key_t * page_header_key = VECTOR_GET(header->keys[0], page_header_key_t*, key_id);
+			page_header_key->key_meta_ptr->header_key_id -= 1;
+		}
+
+		/* Return value from page */
+
+		char * start_from = (char *) page + deleted_header_key->offset;
+		value->size = *(typeof(value->size) *) start_from;
+		value->ptr  = start_from + sizeof(value->size);
+
+		free(deleted_header_key);
+
+		/* Mark page as dirty for further defragmentation */
 
 		header->state = PAGE_DIRTY;
+		header->fragmentated_bytes += value->size;
 
 		return header;
 	}

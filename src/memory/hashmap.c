@@ -8,94 +8,80 @@
 #include <string.h>
 #include <assert.h>
 
-hashmap_t * hashmap_new(size_t max_keys);
-void hashmap_delete(hashmap_t * hmap);
-hashmap_key_t * hashmap_insert_key(hashmap_t * hmap, hashmap_key_t * new_key, hashmap_error_t *err);
-hashmap_key_t * hashmap_lookup_key(hashmap_t * hmap, str_t * key);
-hashmap_key_t * hashmap_delete_key(hashmap_t * hmap, str_t * key);
+hashmap_t hashmap_new(void);
+void hashmap_delete(hashmap_t hashmap);
 
-static hashmap_key_t * hashmap_find(hashmap_t * hmap, str_t * key);
+int hashmap_insert_key(hashmap_t hmap, key_meta_t * key_meta, str_t * key, hashmap_error_t *err);
+key_meta_t * hashmap_lookup_key(hashmap_t hmap, str_t * key, hashmap_error_t *err);
+key_meta_t * hashmap_delete_key(hashmap_t hmap, str_t * key, hashmap_error_t *err);
 
-hashmap_t * hashmap_new(size_t max_keys) {
-	hashmap_t * hmap = (hashmap_t *) calloc(max_keys, sizeof(hashmap_key_t));
-	if (!hmap) {
-		if (errno) fprintf(stderr, "Calloc: %s\n", strerror(errno));
-		return NULL;
-	}
-	hmap->size = max_keys;
-	hmap->used = 0;
-	return hmap;
+hashmap_t hashmap_new();
+void hashmap_delete(hashmap_t hashmap);
+
+extern hashmap_t hashmap;
+
+hashmap_t hashmap_new(void) {
+	assert(hash_new_node(&hashmap, 0) == 0);
+	return hashmap;
 }
 
-void hashmap_delete(hashmap_t * hmap) {
-	free(hmap);
+void hashmap_delete(hashmap_t hashmap) {
+	assert(hash_erase(hashmap) == 1);
 }
 
-hashmap_key_t * hashmap_insert_key(hashmap_t * hmap, hashmap_key_t * new_key, hashmap_error_t *err) {
+int hashmap_insert_key(hashmap_t hmap, key_meta_t * key_meta, str_t * key, hashmap_error_t *err) {
 	*err = HASHMAP_SUCCESS;
-	if (hmap->used == hmap->size) {
-		*err = HASHMAP_NO_SPACE_LEFT;
-		return NULL;
-	}
+	avlnode_ptr found = hash_search(hmap, *key);
 
-	hashmap_key_t * found = hashmap_find(hmap, &new_key->key);
-	if (found->location != FREE) {
+	if (found) {
 		*err = HASHMAP_KEY_FOUND;
+		return -1;
+	}
+
+	int result = hash_insert(hmap, *key, key_meta);
+	if (result != 1) {
+		*err = HASHMAP_INTERNAL_ERROR;
+		return -1;
+	}
+
+	return 0;
+}
+
+key_meta_t * hashmap_lookup_key(hashmap_t hmap, str_t * key, hashmap_error_t *err) {
+	*err = HASHMAP_SUCCESS;
+	avlnode_ptr found = hash_search(hmap, *key);
+
+	if (found) {
+		key_meta_t * key_meta = found->meta;
+		return key_meta;
+	}
+
+	return NULL;
+}
+
+key_meta_t * hashmap_delete_key(hashmap_t hmap, str_t * key, hashmap_error_t *err) {
+	*err = HASHMAP_SUCCESS;
+	avlnode_ptr found = hash_search(hmap, *key);
+
+	if (!found) {
 		return NULL;
 	}
 
-	memcpy(found, new_key, sizeof(*new_key));
-	hmap->used++;
-	return found;
-}
+	key_meta_t * key_meta = (key_meta_t *) found->meta;
 
-// Linear search (just to write code fast)
-hashmap_key_t * hashmap_lookup_key(hashmap_t * hmap, str_t * key) {
-	hashmap_key_t * found = hashmap_find(hmap, key);
-	if (!found || found->location == FREE) {
-		return NULL;
-	}
+	key_meta_t * rv = calloc(1, sizeof(key_meta_t));
+	rv->header_key_id = key_meta->header_key_id;
+	rv->page = key_meta->page;
 
-	return found;
-}
+	int result = hash_delete(hmap, *key);
+	assert(result == 1);
 
-// Delete key if exists
-hashmap_key_t * hashmap_delete_key(hashmap_t * hmap, str_t * key) {
-	hashmap_key_t * found = hashmap_lookup_key(hmap, key);
-	if (found->location == FREE) {
-		return NULL;
-	}
-
-	found->location = FREE;
-	found->fragmentated = DIRTY;
-
-	hmap->used--;
-	return found;
-}
-
-static hashmap_key_t * hashmap_find(hashmap_t * hmap, str_t * key) {
-	hashmap_key_t * found = &hmap->top[0];
-	hashmap_key_t * end = &hmap->top[hmap->size];
-
-	hashmap_key_t * free = NULL;
-
-	for (; found < end; found += sizeof(*found)) {
-		if (!free && (found->location == FREE)) {
-			free = found;
-			continue;
-		}
-		if (found->key.size != key->size) {
-			continue;
-		}
-		if (!memcmp(found->key.ptr, key->ptr, key->size)) {
-			return found;
-		}
-	}
-	return free;
+	return rv;
 }
 
 const char * hashmap_error[] = {
 	"HASHMAP_SUCCESS",
 	"HASHMAP_KEY_FOUND",
 	"HASHMAP_NO_SPACE_LEFT",
+	"HASHMAP_INTERNAL_ERROR",
 };

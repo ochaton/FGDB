@@ -27,20 +27,21 @@
 
 #include "lib/buddy/memory.h"
 #include "memory/hashmap.h"
+#include "lru/lruq.h"
 
 #include "transactions/queue.h"
 
-hashmap_t * hashmap;
+arena_t   * arena;
+disk_t    * disk;
+lru_queue_t * lru;
+hashmap_t hashmap;
 queue_t * trans_queue;
-pthread_rwlock_t hashmap_lock;
 
-int channel[2];
-
-extern void operation_peek(req_t * req, hashmap_t * hashmap);
-extern void operation_select(req_t * req, hashmap_t * hashmap);
-extern void operation_delete(req_t * req, hashmap_t * hashmap);
-extern void operation_insert(req_t * req, hashmap_t * hashmap);
-extern void operation_update(req_t * req, hashmap_t * hashmap);
+extern void operation_peek(req_t * req, hashmap_t hashmap);
+extern void operation_select(req_t * req, hashmap_t hashmap);
+extern void operation_delete(req_t * req, hashmap_t hashmap);
+extern void operation_insert(req_t * req, hashmap_t hashmap);
+extern void operation_update(req_t * req, hashmap_t hashmap);
 
 
 void on_request (req_t *req) {
@@ -121,26 +122,27 @@ void * transaction_queue_worker (void * args) {
 				operation_update(trans->ancestor, hashmap);
 				break;
 			}
+			default:
+			{
+				fprintf(stderr, "Unknown operation %d\n", trans->msg->cmd);
+				break;
+			}
 		}
 	}
 
 }
 
-int init_hashmap (size_t max_keys) {
-	hashmap = hashmap_new(max_keys);
-	if (!hashmap) {
-		fprintf(stderr, "FATAL: Hashmap not reated\n");
-		return errno;
-	}
-	return 0;
+int db_start(int argc, char const *argv[]) {
+	buddy_new(8192);
+	lru = new_lru_queue();
+	arena = new_arena(1024);
+	disk = init_disk("db.snap");
+	arena->headers = init_headers(1024);
+	hashmap = hashmap_new();
 }
 
 int start_server() {
 	struct ev_loop *loop = ev_default_loop(0);
-
-	// ev_idle idle_watcher;
-	// ev_idle_init(&idle_watcher, idle_cb);
-	// ev_idle_start(loop, &idle_watcher);
 
 	struct ev_periodic every_few_seconds;
 	ev_periodic_init(&every_few_seconds, idle_cb, 0, 0.01, 0);
@@ -156,18 +158,9 @@ int start_server() {
 	return EXIT_SUCCESS;
 }
 
-void init_buddy(size_t kilobytes) {
-	buddy_new(kilobytes);
-}
-
 int main(int argc, char const *argv[]) {
-	int status;
-	status = init_hashmap(1024);
-	if (status) {
-		return status;
-	}
+	db_start(argc, argv);
 
-	init_buddy(1024);
 	if (NULL == (trans_queue = init_queue())) {
 		fprintf(stderr, "Queue not allocated errno=%s\n", strerror(errno));
 		exit(EXIT_FAILURE);
@@ -176,11 +169,6 @@ int main(int argc, char const *argv[]) {
 	pthread_t queue_worker;
 	if (pthread_create(&queue_worker, NULL, transaction_queue_worker, NULL)) {
 		fprintf(stderr, "Thread not created\n");
-		exit(EXIT_FAILURE);
-	}
-
-	if (pthread_rwlock_init(&hashmap_lock, NULL)) {
-		fprintf(stderr, "Creation of rwlock failed\n");
 		exit(EXIT_FAILURE);
 	}
 
