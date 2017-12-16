@@ -2,26 +2,7 @@
 // PVS-Studio Static Code Analyzer for C, C++ and C#: http://www.viva64.com
 #include "HashMap.h"
 
-void hash_test_tree_print(avlnode_ptr go) {
-    if (!go) {
-        return;
-    }
-    int test_mid = 0;
-    if (!go->parent) {
-        test_mid++;
-    }
-    hash_test_tree_print(go->left);
-    hash_test_tree_print(go->right);
-    printf("%s\n",go->key.ptr);
-    if (test_mid) {
-    //    printf("End of  tree \n\n");
-    }
-}
-void hash_test_print(hm_node_ptr go) {
-    for (int32_t i = 0; i < MAX_HASH_NODE; i++) {
-        hash_test_tree_print(go->top[i]);
-    }
-}
+
 int32_t hash_new_node(hm_node_ptr *node, uint32_t dep) {
     //create new hash table
     if (!node) {
@@ -47,12 +28,7 @@ avlnode_ptr hash_search(hm_node_ptr node, str_t key) {
     uint32_t mid_key = hash(key, node->dep);
     while (1) {
         if (node->len_of_list[mid_key] < MAX_HASH_DEP) {
-            /*if (key.ptr[0] == 'R') {
-                hash_test_tree_print(node->top[mid_key]);
-                printf("\n");
-            }*/
             avlnode_ptr mid = avl_search(node->top[mid_key], key);
-            //return avl_search(node->top[mid_key], key);
             if (mid) {
                 printf("MMM %s\n", mid->key.ptr);
             }
@@ -108,9 +84,6 @@ int32_t hash_delete(hm_node_ptr node, str_t key) {
             if (new_avl_node) {
                 avl_delete_node(new_avl_node);
             }
-            //if (node->top[mid_key]) {
-            //    hash_test_tree_print(node->top[mid_key]);
-            //}
             node->top[mid_key] = mid_node;
             node->len_of_list[mid_key]--;
             break;
@@ -119,7 +92,6 @@ int32_t hash_delete(hm_node_ptr node, str_t key) {
             mid_key = hash(key, node->dep);
         }
     }
-    //hash_test_tree_print(node->top[mid_key]);
     return 1;
 }
 

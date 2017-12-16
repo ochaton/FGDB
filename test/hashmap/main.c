@@ -5,6 +5,26 @@
 #include <assert.h>
 #include <stdio.h>
 #include <stdlib.h>
+void hash_test_tree_print(avlnode_ptr go) {
+    if (!go) {
+        return;
+    }
+    int test_mid = 0;
+    if (!go->parent) {
+        test_mid++;
+    }
+    hash_test_tree_print(go->left);
+    hash_test_tree_print(go->right);
+    printf("%s\n",go->key.ptr);
+    if (test_mid) {
+    //    printf("End of  tree \n\n");
+    }
+}
+void hash_test_print(hm_node_ptr go) {
+    for (int32_t i = 0; i < MAX_HASH_NODE; i++) {
+        hash_test_tree_print(go->top[i]);
+    }
+}
 
 hm_node_ptr hashmap;
 const int32_t MAX_N = 100;
@@ -280,6 +300,6 @@ int main(void) {
 	RUN_TEST(test5);
 	RUN_TEST(test6);
 	RUN_TEST(test7);
-	RUN_TEST(test8);
+	//RUN_TEST(test8);
 	return UNITY_END();
 }

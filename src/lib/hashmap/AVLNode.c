@@ -10,21 +10,7 @@ static void __avl_right_move(avlnode_ptr *node);
 static void __avl_left_move(avlnode_ptr *node);
 static void __avl_LR_move(avlnode_ptr *node);
 static void __avl_RL_move(avlnode_ptr *node);
-void avl_test_tree_print(avlnode_ptr go) {
-    if (!go) {
-        return;
-    }
-    int test_mid = 0;
-    if (!go->parent) {
-        test_mid++;
-    }
-    avl_test_tree_print(go->left);
-    avl_test_tree_print(go->right);
-    printf("%s\n",go->key.ptr);
-    if (test_mid) {
-    //    printf("End of  tree \n\n");
-    }
-}
+
 int32_t avl_new_node(avlnode_ptr *new_node, str_t key, void *meta) {
 
     avlnode_ptr mid_node = (avlnode *) malloc(sizeof(avlnode));
@@ -151,7 +137,7 @@ int32_t avl_remove_node(avlnode_ptr *node, avlnode_ptr node_new) {
                 avl_calc_hight(*node);
                 avl_rebalance(node);
             }
-
+            avl_delete_node(mid1);
         } else if ((*node)->left) {
             avlnode_ptr mid1 = (*node)->left;
 

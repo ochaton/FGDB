@@ -35,9 +35,5 @@ int32_t hash_erase(hm_node_ptr node);
 // Internal for tests
 int32_t __hash_remake(hm_node_ptr node, uint32_t index);
 int32_t __hash_insert_avl_in_hash(hm_node_ptr node, avlnode_ptr go);
-//               Test                   /
-/////////////////////////////////////////
-void hash_test_tree_print(avlnode_ptr go);
-void hash_test_print(hm_node_ptr go);
-/////////////////////////////////////////
+
 #endif
