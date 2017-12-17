@@ -2,6 +2,7 @@
 // PVS-Studio Static Code Analyzer for C, C++ and C#: http://www.viva64.com
 #include "HashMap.h"
 
+int FLAG_BULBA = 0;
 void hash_test_tree_print(avlnode_ptr go) {
     if (!go) {
         return;
@@ -66,6 +67,7 @@ int32_t hash_insert(hm_node_ptr node, str_t key, void *meta) {
         node = node->top[mid_key];
         mid_key = hash(key, node->dep);
     }
+    //printf("mid_key is %d; key is %s\n",mid_key,key.ptr );
     avlnode_ptr new_avl_node;
     avl_new_node(&new_avl_node, key, meta);
     if (!node->top[mid_key]) {
@@ -93,6 +95,16 @@ int32_t hash_delete(hm_node_ptr node, str_t key) {
         if (node->len_of_list[mid_key] < MAX_HASH_DEP) {
             avlnode_ptr new_avl_node;
             avl_new_node(&new_avl_node, key, NULL);
+
+
+            /*printf("I del\n");
+            printf("%s\n",key.ptr );
+            printf("+++++++++++++\n");
+            printf("Before del\n");
+            hash_test_tree_print(node->top[mid_key]);
+            printf("------------\n");
+            */
+
             avlnode_ptr mid_node = node->top[mid_key];
             int32_t stat = avl_remove_node(&mid_node, new_avl_node);
             if (new_avl_node) {
@@ -100,8 +112,18 @@ int32_t hash_delete(hm_node_ptr node, str_t key) {
             }
             node->top[mid_key] = mid_node;
             if (stat == 1) {
+
                 node->len_of_list[mid_key]--;
+                //if (node->len_of_list[mid_key] > 10) {
+                //    printf("ALERT %d\n",node->len_of_list[mid_key] );
+                //}
             }
+            /*
+            printf("After del\n");
+            hash_test_tree_print(node->top[mid_key]);
+            printf("------------\n");
+            */
+
             break;
         } else {
             node = node->top[mid_key];
@@ -115,10 +137,13 @@ int32_t hash_erase_new(hm_node_ptr *node) {
     if (!(*node)) {
         return 0;
     }
-
+    int FLAG_ANDREY = 0;
+    if (!FLAG_ANDREY && !FLAG_BULBA) {
+        FLAG_BULBA = 1;
+        FLAG_ANDREY = 1;
+    }
     for (uint32_t i = 0; i < MAX_HASH_NODE; i++) {
         if ((*node)->len_of_list[i] > MAX_HASH_DEP) {
-            printf("SKIP\n");
             hash_erase_new((*node)->top[i]);
         } else {
             if ((*node)->len_of_list[i] > 0) {
@@ -127,8 +152,10 @@ int32_t hash_erase_new(hm_node_ptr *node) {
 
         }
     }
-    printf("ZZZ\n");
-    free(*node);
+    //printf("ZZZ\n");
+    if (FLAG_ANDREY && FLAG_BULBA) {
+        free(*node);
+    }
     return 1;
 }
 
@@ -139,17 +166,22 @@ int32_t hash_erase(hm_node_ptr node) {
 
     for (uint32_t i = 0; i < MAX_HASH_NODE; i++) {
         if (node->len_of_list[i] > MAX_HASH_DEP) {
-            //printf("SKIP\n");
+            printf("SKIP\n");
             hash_erase(node->top[i]);
         } else {
             if (node->len_of_list[i] > 0) {
+                printf("may ? %d\n", i);
                 avl_erase(node->top[i]);
+                printf("%d is ok\n", i);
             }
 
         }
     }
-    //printf("ZZZ\n");
-    free(node);
+    printf("ZZZ\n");
+    if (node) {
+        free(node);
+    }
+    printf("End\n");
     return 1;
 }
 

@@ -48,7 +48,8 @@ void tearDown() {
 		//test_node_pr(hashmap);
 		//printf("%d\n", DD);
 	//}
-	uint32_t result = hash_erase(hashmap);
+	//uint32_t result = hash_erase(hashmap);
+	uint32_t result = hash_erase_new(&hashmap);
 	//printf("KEK\n");
 	assert(result == 1);
 	TEST_ASSERT_MESSAGE(result == 1, "Hashmap must been erased with 1 status");
@@ -353,7 +354,6 @@ int main(void) {
 	RUN_TEST(test6);
 	RUN_TEST(test7);
 	RUN_TEST(test8);
-	STEP = 1;
 	RUN_TEST(test9);
 	return UNITY_END();
 }
