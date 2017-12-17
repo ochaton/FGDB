@@ -111,7 +111,7 @@ void test1(void) {
 	TEST_ASSERT_EQUAL_STRING_LEN(retval.ptr, kv.val.ptr, retval.size);
 }
 
-void test2(void) {
+void binary_structure_test(void) {
 	msg_t m = {
 		INSERT,
 		{ 3, "key" },
@@ -130,9 +130,38 @@ void test2(void) {
 	TEST_ASSERT_EQUAL_STRING_LEN(m.val.ptr, &b->ptr[16], 5);
 }
 
+void binary_logs_writing_test(void) {
+	msg_t m = {
+		INSERT,
+		{ 3, "key" },
+		{ 5, "value" }
+	};
+	transaction_t t = { NULL, &m };
+	wal_logger_t* l = new_wal_logger(0, 0, 1);
+	write_log(l, &t);
+	msg_t m2 = {
+		UPDATE,
+		{ 4, "key1" },
+		{ 6, "value1" }
+	};
+	transaction_t t2 = { NULL, &m2 };
+	write_log(l, &t2);
+	wal_unlogger_t* u = new_unlogger("log/0000000000000000000001.log");
+	transaction_t* rt = recover_transaction(u);
+	TEST_ASSERT_EQUAL_STRING_LEN(rt->msg->key.ptr, "key",   rt->msg->key.size);
+	TEST_ASSERT_EQUAL_STRING_LEN(rt->msg->val.ptr, "value", rt->msg->val.size);
+	TEST_ASSERT_MESSAGE(rt->msg->cmd == INSERT, "OPERATIONS are the same 1");
+
+	rt = recover_transaction(u);
+	TEST_ASSERT_EQUAL_STRING_LEN(rt->msg->key.ptr, "key1",   rt->msg->key.size);
+	TEST_ASSERT_EQUAL_STRING_LEN(rt->msg->val.ptr, "value1", rt->msg->val.size);
+	TEST_ASSERT_MESSAGE(rt->msg->cmd == UPDATE, "OPERATIONS are the same 2");
+}
+
 int main(void) {
 	UNITY_BEGIN();
 	RUN_TEST(test1);
-	RUN_TEST(test2);
+	RUN_TEST(binary_structure_test);
+	RUN_TEST(binary_logs_writing_test);
 	return UNITY_END();
 }

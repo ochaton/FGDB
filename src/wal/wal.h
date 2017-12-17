@@ -38,6 +38,11 @@ typedef struct {
 	char*    ptr;
 } binary_record_t;
 
+typedef struct {
+	uint64_t seek;
+	int      file;
+} wal_unlogger_t;
+
 wal_logger_t* new_wal_logger(lsn_t LSN, lsn_t fLSN, uint32_t log_id);
 
 void dbg_str (str_t s);
@@ -57,5 +62,13 @@ void destroy_wal_record(wal_log_record_t* r);
 void destroy_wal_logger(wal_logger_t* w);
 
 void destroy_binary_record(binary_record_t* r);
+
+// RECOVERY STARTS HERE
+
+wal_unlogger_t* new_unlogger(char* path);
+
+transaction_t* recover_transaction(wal_unlogger_t* u);
+
+void destroy_wal_unlogger(wal_unlogger_t* u);
 
 #endif

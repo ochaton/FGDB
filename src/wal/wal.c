@@ -33,6 +33,16 @@ void dbg_str (str_t s) {
 lsn_t write_log(wal_logger_t* w, transaction_t* t) {
 	wal_log_record_t* wr = to_wal_record(w, t);
 	binary_record_t*  br = to_binary(wr);
+	if ((uint64_t) write(w->file, br->ptr, br->size) != br->size) {
+		fprintf(stderr, "Problems while writing binary logs: %s\n", strerror(errno));
+		exit(errno);
+	}
+
+	// adding \n after every log line for easier parsing in vim binary mode
+	if (write(w->file, "\n", 1) != 1) {
+		fprintf(stderr, "Problems while writing binary logs: %s\n", strerror(errno));
+		exit(errno);
+	}
 	destroy_binary_record(br);
 	lsn_t LSN = wr->LSN;
 	destroy_wal_record(wr);
@@ -117,9 +127,82 @@ void destroy_wal_record(wal_log_record_t* r) {
 void destroy_wal_logger(wal_logger_t* w) {
 	close(w->file);
 	free(w);
+	return;
 }
 
 void destroy_binary_record(binary_record_t* r) {
 	free(r->ptr);
 	free(r);
+	return;
+}
+
+wal_unlogger_t* new_unlogger(char* path) {
+	wal_unlogger_t* u = malloc(sizeof(wal_unlogger_t));
+	u->file = open(path, O_RDONLY);
+	if (u->file == -1) {
+		fprintf(stderr, "Error in opening file: %s\n", strerror(errno));
+		exit(errno);
+	}
+	u->seek = 0;
+	return u;
+}
+
+static void read_to_buf(int file, char* buf, uint64_t size) {
+	ssize_t size_read;
+	size_read = read(file, buf, size);
+	if ((uint64_t) size_read != size) {
+		fprintf(stderr, "Error reading binary log: %s\n", strerror(errno));
+		exit(errno);
+	}
+}
+
+transaction_t* recover_transaction(wal_unlogger_t* u) {
+	transaction_t* t = malloc(sizeof(transaction_t));
+
+	char* buf8 = malloc(8*sizeof(char));
+	char* buf2 = malloc(2*sizeof(char));
+	char* buf1 = malloc(1*sizeof(char));
+
+	read_to_buf(u->file, buf8, 8);
+	uint64_t LSN   = *((uint64_t*) buf8);
+
+	read_to_buf(u->file, buf1, 1);
+	uint16_t op    = *((char*)     buf1);
+
+	// read key from log
+	read_to_buf(u->file, buf2, 2);
+	uint16_t ksize = *((uint16_t*) buf2);
+	char* key_buf = malloc(sizeof(char) * ksize);
+	read_to_buf(u->file, key_buf, ksize);
+
+	// read val from log
+	read_to_buf(u->file, buf2, 2);
+	uint16_t vsize = *((uint16_t*) buf2);
+	char* val_buf = malloc(sizeof(char) * vsize);
+	read_to_buf(u->file, val_buf, vsize);
+
+	// read following \n
+	read_to_buf(u->file, buf1, 1);
+
+	msg_t* m = malloc(sizeof(msg_t));
+	m->key.size = ksize;
+	m->key.ptr  = key_buf;
+	m->val.size = vsize;
+	m->val.ptr  = val_buf;
+	m->cmd      = (enum msg_command_t) op;
+
+	// NULL ancestor as long as we don't really have any
+	t->ancestor = NULL;
+	t->msg      = m;
+
+	free(buf8);
+	free(buf2);
+	free(buf1);
+	return t;
+}
+
+void destroy_wal_unlogger(wal_unlogger_t* u) {
+	close(u->file);
+	free(u);
+	return;
 }
