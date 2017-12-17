@@ -1,9 +1,6 @@
 #ifndef MESSAGE_H
 #define MESSAGE_H
 
-#include <stdint.h>
-#include "common.h"
-
 enum msg_command_t {
 	PEEK   = 0x1,
 	SELECT = 0x2,
@@ -12,7 +9,10 @@ enum msg_command_t {
 	DELETE = 0x5,
 };
 
-typedef struct {
+#include <stdint.h>
+#include "common.h"
+
+typedef struct msg_t {
 	enum msg_command_t cmd;
 	str_t key, val;
 } msg_t;

@@ -5,6 +5,8 @@
 #include <msgpack.h>
 #include "message.h"
 
+typedef struct msg_t msg_t;
+
 enum proto_reply_error_t {
 	PROTO_ERROR_UNKNOWN = 0x0,
 	PROTO_ERROR_COMMAND = 0x1,
@@ -28,7 +30,7 @@ typedef struct {
 	msg_t msg;
 } proto_request_t;
 
-typedef struct {
+typedef struct proto_reply_t {
 	// uint32_t seq;
 	enum proto_reply_code_t code;
 	union {

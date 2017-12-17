@@ -32,6 +32,10 @@ void dbg_str (str_t s) {
 
 lsn_t write_log(wal_logger_t* w, transaction_t* t) {
 	wal_log_record_t* wr = to_wal_record(w, t);
+	// operation is not logged
+	if (!wr) {
+		return (lsn_t) 0;
+	}
 	binary_record_t*  br = to_binary(wr);
 	if ((uint64_t) write(w->file, br->ptr, br->size) != br->size) {
 		fprintf(stderr, "Problems while writing binary logs: %s\n", strerror(errno));

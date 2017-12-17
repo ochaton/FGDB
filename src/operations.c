@@ -11,13 +11,13 @@
 #include <stdlib.h>
 
 
-void operation_peek(req_t * req, hashmap_t hashmap);
-void operation_select(req_t * req, hashmap_t hashmap);
-void operation_delete(req_t * req, hashmap_t hashmap);
-void operation_insert(req_t * req, hashmap_t hashmap);
-void operation_update(req_t * req, hashmap_t hashmap);
+void operation_peek(req_t * req, hashmap_t hashmap, lsn_t LSN);
+void operation_select(req_t * req, hashmap_t hashmap, lsn_t LSN);
+void operation_delete(req_t * req, hashmap_t hashmap, lsn_t LSN);
+void operation_insert(req_t * req, hashmap_t hashmap, lsn_t LSN);
+void operation_update(req_t * req, hashmap_t hashmap, lsn_t LSN);
 
-void operation_peek(req_t * req, hashmap_t hashmap) {
+void operation_peek(req_t * req, hashmap_t hashmap, lsn_t LSN) {
 	hashmap_error_t err;
 	key_meta_t * key = hashmap_lookup_key(hashmap, &req->msg->key, &err);
 	proto_reply_t reply;
@@ -36,7 +36,7 @@ void operation_peek(req_t * req, hashmap_t hashmap) {
 	return;
 }
 
-void operation_select(req_t * req, hashmap_t hashmap) {
+void operation_select(req_t * req, hashmap_t hashmap, lsn_t LSN) {
 	hashmap_error_t err;
 	key_meta_t * key_meta = hashmap_lookup_key(hashmap, &req->msg->key, &err);
 	proto_reply_t reply;
@@ -61,7 +61,7 @@ void operation_select(req_t * req, hashmap_t hashmap) {
 	request_reply(req, &reply);
 }
 
-void operation_delete(req_t * req, hashmap_t hashmap) {
+void operation_delete(req_t * req, hashmap_t hashmap, lsn_t LSN) {
 	proto_reply_t reply;
 
 	hashmap_error_t err;
@@ -75,7 +75,9 @@ void operation_delete(req_t * req, hashmap_t hashmap) {
 		return;
 	}
 
-	if (!page_value_unset(deleted, &reply.val)) {
+	page_header_t * header = page_value_unset(deleted, &reply.val);
+
+	if (!header) {
 		req->log->error(req->log, "Unsetting value failed while delete key");
 		reply.code  = REPLY_FATAL;
 		reply.cmd   = req->msg->cmd;
@@ -84,6 +86,7 @@ void operation_delete(req_t * req, hashmap_t hashmap) {
 		return;
 	}
 
+	update_lsn(header, LSN);
 	reply.code = REPLY_OK;
 	reply.cmd = req->msg->cmd;
 
@@ -92,7 +95,7 @@ void operation_delete(req_t * req, hashmap_t hashmap) {
 	request_reply(req, &reply);
 }
 
-void operation_insert(req_t * req, hashmap_t hashmap) {
+void operation_insert(req_t * req, hashmap_t hashmap, lsn_t LSN) {
 	proto_reply_t reply;
 
 	/* Validate incoming data */
@@ -141,6 +144,8 @@ void operation_insert(req_t * req, hashmap_t hashmap) {
 		return;
 	}
 
+	update_lsn(header, LSN);
+
 	req->log->debug(req->log, "Value has been put into arena");
 
 	/* Insert key into hashmap */
@@ -171,6 +176,9 @@ void operation_insert(req_t * req, hashmap_t hashmap) {
 	return;
 }
 
-void operation_update(req_t * req, hashmap_t hashmap) {
+void operation_update(req_t * req, hashmap_t hashmap, lsn_t LSN) {
+	// TODO: do not forget to work with LSN when writing update
+	// I think it should not be a problem if we just copy-paste code from delete + insert as long as basicly it is exactly that
+	// But there might be some problems still
 	destroy_request(req);
 }

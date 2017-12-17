@@ -8,9 +8,11 @@
 #include <pthread.h>
 #include <semaphore.h>
 
+typedef struct request req_t;
+
 typedef struct {
 	req_t* ancestor;
-	msg_t* msg;
+	struct msg_t* msg;
 } transaction_t;
 
 typedef struct {

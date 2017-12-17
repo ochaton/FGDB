@@ -8,6 +8,8 @@
 #include "server/proto.h"
 
 typedef struct request req_t;
+typedef struct msg_t msg_t;
+typedef struct proto_reply_t proto_reply_t;
 typedef struct ev_server ev_server;
 
 struct request {
