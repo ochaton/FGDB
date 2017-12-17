@@ -56,12 +56,6 @@ avlnode_ptr avl_search_line(avlnode_ptr node, str_t key) {
     if (!node) {
         return NULL;
     }
-    /*if (key.ptr[0] == 'R') {
-        //printf("A_i %s\n", key.ptr);
-        printf("+++++++++\n");
-        avl_test_print(node);
-        printf("+++++++++\n");
-    }*/
     int32_t mid = key_comp(node->key, key);
     while ((node) && (mid != 0)) {
         if (mid > 0) {
@@ -143,13 +137,6 @@ int32_t avl_remove_node(avlnode_ptr *node, avlnode_ptr node_new) {
             avl_delete_node(node);
             *node = NULL;
         } else if ((*node)->left && (*node)->right) {
-            /*if ((*node)->key.ptr[0] == 'W') {
-                printf("AA_Node is ");
-                for (int32_t i = 0; i < (*node)->key.size; i++) {
-                    printf("%c", (*node)->key.ptr[i]);
-                }
-                printf("\n");
-            }*/
             avlnode_ptr mid1 = *node, mid2;
             mid1 = mid1->left;
             while (mid1->right) {
@@ -220,10 +207,6 @@ int32_t avl_remove_node(avlnode_ptr *node, avlnode_ptr node_new) {
                 printf("\n");
             }
             avlnode_ptr mid1 = (*node)->right;
-            ////////////////////////////
-            //free((*node)->key.ptr);
-            //(*node)->key.size = 0;
-            ////////////////////////////
             str_t kkey = (*node)->key;
             (*node)->key = mid1->key;
             mid1->key = kkey;
@@ -241,13 +224,6 @@ int32_t avl_remove_node(avlnode_ptr *node, avlnode_ptr node_new) {
             avl_calc_hight(*node);
             avl_rebalance(node);
             avl_delete_node(&mid1);
-            /*if (ww) {
-                printf("AA_Node is ");
-                for (int32_t i = 0; i < (*node)->key.size; i++) {
-                    printf("%c", (*node)->key.ptr[i]);
-                }
-                printf("\n");
-            }*/
         }
         return 1;
     }

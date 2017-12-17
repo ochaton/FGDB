@@ -59,14 +59,6 @@ int32_t hash_insert(hm_node_ptr node, str_t key, void *meta) {
         node = node->top[mid_key];
         mid_key = hash(key, node->dep);
     }
-    if ((mid_key == 2540) || (mid_key == 2984)) {
-        //printf("%d ;\n",mid_key );
-        //for (int32_t i = 0; i < key.size; i++) {
-        //    printf("%c", key.ptr[i]);
-        //}
-        //rintf("\nEND of key\n");
-        //printf("%s\n", key.ptr);
-    }
     //printf("mid_key is %d; key is %s\n",mid_key,key.ptr );
     avlnode_ptr new_avl_node;
     avl_new_node(&new_avl_node, key, meta);
@@ -91,24 +83,10 @@ int32_t hash_delete(hm_node_ptr node, str_t key) {
     uint32_t mid_key = hash(key, node->dep);
     while (1) {
         if (node->len_of_list[mid_key] < MAX_HASH_DEP) {
-            /*if (key.ptr[0] == 'W') {
-                for (int32_t j = 0; j < key.size; j++) {
-                    printf("%c",key.ptr[j] );
-                }
-                printf("\n%d\n",mid_key );
-                printf("-------------\n");
-                hash_test_tree_print(node->top[mid_key]);
-                printf("~~~~~~~~~~~~~\n");
-            }*/
             avlnode_ptr new_avl_node;
             avl_new_node(&new_avl_node, key, NULL);
             avlnode_ptr mid_node = node->top[mid_key];
             int32_t stat = avl_remove_node(&mid_node, new_avl_node);
-            /*if (key.ptr[0] == 'W') {
-                printf("-----After-----\n");
-                hash_test_tree_print(node->top[mid_key]);
-                printf("~~~~~~~~~~~~~\n");
-            }*/
             if (new_avl_node) {
                 avl_erase(new_avl_node);
             }
@@ -136,18 +114,15 @@ int32_t hash_erase_new(hm_node_ptr *node) {
     }
     for (uint32_t i = 0; i < MAX_HASH_NODE; i++) {
         if ((*node)->len_of_list[i] > MAX_HASH_DEP) {
-            //printf("SKIP\n");
             hash_erase_new((*node)->top[i]);
             free((*node)->top[i]);
         } else {
             if ((*node)->len_of_list[i] > 0) {
                 avl_erase((*node)->top[i]);
-                //printf("Key, %d\n",i );
             }
 
         }
     }
-    //printf("ZZZ\n");
     if (FLAG_OUT && FLAG_IN && (*node)) {
         free(*node);
         FLAG_IN = 0;
@@ -156,32 +131,38 @@ int32_t hash_erase_new(hm_node_ptr *node) {
     *node = NULL;
     return 1;
 }
-
+/*int FLAG_OUT_1 = 0;
 int32_t hash_erase(hm_node_ptr node) {
     if (!node) {
         return 0;
     }
-
+    int FLAG_IN_1 = 0;
+    if (!FLAG_IN_1 && !FLAG_OUT_1) {
+        FLAG_OUT_1 = 1;
+        FLAG_IN_1 = 1;
+    }
     for (uint32_t i = 0; i < MAX_HASH_NODE; i++) {
         if (node->len_of_list[i] > MAX_HASH_DEP) {
-            //printf("SKIP\n");
             hash_erase(node->top[i]);
+            free(node->top[i]);
         } else {
             if (node->len_of_list[i] > 0) {
-               // printf("may ? %d\n", i);
                 avl_erase(node->top[i]);
-                //printf("%d is ok\n", i);
             }
 
         }
     }
-    printf("ZZZ\n");
+    if (FLAG_OUT_1 && FLAG_IN_1 && node) {
+        free(node);
+        FLAG_IN_1 =0;
+        FLAG_OUT_1 = 0;
+    }
     if (node) {
         free(node);
     }
-    printf("End\n");
+
     return 1;
-}
+}*/
 
 int32_t __hash_remake(hm_node_ptr node, uint32_t index) {
     //if == then it is flag that make new hash, if > that it is hash

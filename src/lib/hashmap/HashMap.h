@@ -30,7 +30,7 @@ avlnode_ptr hash_search(hm_node_ptr node, str_t key);
 
 int32_t hash_insert(hm_node_ptr node, str_t key, void *meta);
 int32_t hash_delete(hm_node_ptr node, str_t key);
-int32_t hash_erase(hm_node_ptr node);
+//int32_t hash_erase(hm_node_ptr node);
 int32_t hash_erase_new(hm_node_ptr *node);
 // Internal for tests
 int32_t __hash_remake(hm_node_ptr node, uint32_t index);

@@ -29,7 +29,7 @@ int32_t max_32t(int32_t first, int32_t second);
 
 // methods
 int32_t avl_new_node(avlnode_ptr *new_node, str_t key, void *meta);
-    avlnode_ptr avl_search(avlnode_ptr node, str_t key);
+//    avlnode_ptr avl_search(avlnode_ptr node, str_t key);
 int32_t avl_insert_node(avlnode_ptr *node, avlnode_ptr node_new);
 int32_t avl_remove_node(avlnode_ptr *node, avlnode_ptr node_new);
 int32_t avl_delete_node(avlnode_ptr *node);

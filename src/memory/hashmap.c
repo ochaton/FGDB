@@ -26,7 +26,7 @@ hashmap_t hashmap_new(void) {
 }
 
 void hashmap_delete(hashmap_t hashmap) {
-	assert(hash_erase(hashmap) == 1);
+	assert(hash_erase_new(&hashmap) == 1);
 }
 
 int hashmap_insert_key(hashmap_t hmap, key_meta_t * key_meta, str_t * key, hashmap_error_t *err) {

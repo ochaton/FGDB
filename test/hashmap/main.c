@@ -11,32 +11,6 @@ hm_node_ptr hashmap;
 const int32_t MAX_N = 100;
 int STEP = 0;
 int DD = 0;
-/*void test_tree_print(avlnode_ptr go) {
-    if (!go) {
-        return;
-    }
-    test_tree_print(go->left);
-    test_tree_print(go->right);
-    printf("T_Node is %s;	\n",go->key.ptr);
-    DD++;
-}
-int32_t test_node_pr(hm_node_ptr node) {
-    if (!node) {
-        return 0;
-    }
-    for (uint32_t i = 0; i < MAX_HASH_NODE; i++) {
-        if (node->len_of_list[i] > MAX_HASH_DEP) {
-            test_node_pr(node->top[i]);
-        } else {
-            if (node->len_of_list[i] > 0) {
-            	printf("Len is %d\n", node->len_of_list[i]);
-                test_tree_print(node->top[i]);
-            }
-
-        }
-    }
-    return 1;
-}*/
 void setUp(void) {
 	uint32_t result = hash_new_node(&hashmap, 0);
 	assert(hashmap);
@@ -44,17 +18,10 @@ void setUp(void) {
 }
 
 void tearDown() {
-	//if (STEP) {
-		//test_node_pr(hashmap);
-		//printf("%d\n", DD);
-	//}
-	//uint32_t result = hash_erase(hashmap);
 	uint32_t result = hash_erase_new(&hashmap);
 	if (hashmap) {
 		free(hashmap);
 	}
-
-	//printf("KEK\n");
 	assert(result == 1);
 	TEST_ASSERT_MESSAGE(result == 1, "Hashmap must been erased with 1 status");
 }
@@ -332,15 +299,7 @@ void test9() {
 		}
 	}
 	int lim = (MAX_N * 2) / 3;
-	//lim = 47;
 	for (int i = MAX_N / 3; i < lim; i++) {
-		/*if (i == 46) {
-			printf("Problem with len %d\n",keys[i].size);
-			for (int32_t j = 0; j < keys[i].size;j++) {
-				printf("%c",keys[i].ptr[j] );
-			}
-			printf("\nEnd\n++++++++++++\n");
-		}*/
 		avlnode_ptr found;
 		found = hash_search(hashmap, keys[i]);
 		if (!flag[i]) {
@@ -356,7 +315,6 @@ void test9() {
 			free(keys[i].ptr);
 		}
 	}
-	//printf("Then\n");
 }
 
 int main(void) {
