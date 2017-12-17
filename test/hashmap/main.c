@@ -50,6 +50,10 @@ void tearDown() {
 	//}
 	//uint32_t result = hash_erase(hashmap);
 	uint32_t result = hash_erase_new(&hashmap);
+	if (hashmap) {
+		free(hashmap);
+	}
+
 	//printf("KEK\n");
 	assert(result == 1);
 	TEST_ASSERT_MESSAGE(result == 1, "Hashmap must been erased with 1 status");
@@ -328,10 +332,19 @@ void test9() {
 		}
 	}
 	int lim = (MAX_N * 2) / 3;
+	//lim = 47;
 	for (int i = MAX_N / 3; i < lim; i++) {
+		/*if (i == 46) {
+			printf("Problem with len %d\n",keys[i].size);
+			for (int32_t j = 0; j < keys[i].size;j++) {
+				printf("%c",keys[i].ptr[j] );
+			}
+			printf("\nEnd\n++++++++++++\n");
+		}*/
 		avlnode_ptr found;
 		found = hash_search(hashmap, keys[i]);
 		if (!flag[i]) {
+			//printf("DEL;\n");
 			TEST_ASSERT_NOT_NULL(found);
 			TEST_ASSERT_EQUAL_STRING_LEN(found->key.ptr, keys[i].ptr, keys[i].size);
 			TEST_ASSERT_MESSAGE(found->meta == &pages[i], "Save pointer to meta");
@@ -339,7 +352,9 @@ void test9() {
 		}
 	}
 	for (int i = 0; i < MAX_N; i++) {
-		free(keys[i].ptr);
+		if (keys[i].ptr) {
+			free(keys[i].ptr);
+		}
 	}
 	//printf("Then\n");
 }
