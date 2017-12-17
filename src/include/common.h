@@ -33,6 +33,18 @@ typedef struct {
 extern struct arena *arena;
 extern struct disk  *disk;
 extern struct lru_queue_t  *lru;
+
+struct FGBD_t;
+typedef struct FGDB_t FGDB_t;
+
+// TODO: start using this structure instead of numerous "extern struct" in every single file that needs them
+struct FGDB_t {
+	struct arena        *arena;
+	struct disk         *disk;
+	struct lru_queue_t  *lru;
+	struct wal_logger_t *wal;
+};
+
 // extern hashmap_t *hashmap;
 
 #endif // COMMON_H

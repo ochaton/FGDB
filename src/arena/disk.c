@@ -55,6 +55,7 @@ void disk_upload_page(disk_t *disk, page_id_t disk_page_idx, arena_page_id_t are
 	return;
 }
 
+// TODO: do not forget about dumping pLSNs when we are dumping page headers
 void disk_dump_page(page_id_t page_idx, arena_page_id_t arena_idx) {
 	off_t page_pos = disk->arena_start + page_idx * PAGE_SIZE;
 
