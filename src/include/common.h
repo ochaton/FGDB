@@ -28,6 +28,7 @@ typedef struct {
 #include "arena/disk.h"
 #include "arena/meta.h"
 #include "memory/hashmap.h"
+#include "wal/wal.h"
 
 extern struct arena *arena;
 extern struct disk  *disk;

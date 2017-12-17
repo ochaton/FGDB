@@ -4,13 +4,10 @@
 #include <stddef.h>
 #include <stdint.h>
 
-#include "wal/wal.h"
 #include "common.h"
 #include "memory/hashmap.h"
 #include "lib/vector/vector.h"
-
-// dirty hack because I don't want to think about circular dependecies now
-typedef uint64_t lsn_t;
+#include "wal/wal.h"
 
 typedef struct page_header_key_t {
 	uint16_t offset;

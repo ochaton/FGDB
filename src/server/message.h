@@ -9,6 +9,9 @@ enum msg_command_t {
 	DELETE = 0x5,
 };
 
+struct msg_t;
+typedef struct msg_t msg_t;
+
 #include <stdint.h>
 #include "common.h"
 

@@ -1,11 +1,12 @@
 #ifndef PROTO_H
 #define PROTO_H
 
+struct proto_reply_t;
+typedef struct proto_reply_t proto_reply_t;
+
 #include <stdint.h>
 #include <msgpack.h>
 #include "message.h"
-
-typedef struct msg_t msg_t;
 
 enum proto_reply_error_t {
 	PROTO_ERROR_UNKNOWN = 0x0,
@@ -24,11 +25,6 @@ enum fgdb_code_t {
 	KEY_EXISTS    = 0x1,
 	KEY_NOT_FOUND = 0x2,
 };
-
-typedef struct {
-	// uint32_t seq;
-	msg_t msg;
-} proto_request_t;
 
 typedef struct proto_reply_t {
 	// uint32_t seq;

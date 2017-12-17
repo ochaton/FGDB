@@ -9,6 +9,10 @@
 #include <fcntl.h>
 #include <errno.h>
 #include <string.h>
+#include <stddef.h>
+#include <stdint.h>
+
+typedef uint64_t lsn_t;
 
 #include "common.h"
 #include "server/message.h"
@@ -17,8 +21,6 @@
 // TODO: raise flushedLSN when dumping page to disk
 // TODO: make single file with recoveryLSNs for each page
 // TODO: dump pageLSN with the page
-
-typedef uint64_t lsn_t;
 
 typedef struct {
 	lsn_t              LSN;
@@ -53,7 +55,7 @@ binary_record_t* to_binary(wal_log_record_t* r);
 
 void update_flushed_LSN(wal_logger_t* w, lsn_t fLSN);
 
-lsn_t give_new_LSN(wal_logger_t* w); 
+lsn_t give_new_LSN(wal_logger_t* w);
 
 wal_log_record_t* to_wal_record(wal_logger_t* w, transaction_t* t);
 

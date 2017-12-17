@@ -1,16 +1,14 @@
 #ifndef REQUEST_H
 #define REQUEST_H
 
+struct request;
+typedef struct request req_t;
+
 #include "server/log.h"
 #include "server/tcp-server.h"
 #include "server/message.h"
 #include "server/buffer.h"
 #include "server/proto.h"
-
-typedef struct request req_t;
-typedef struct msg_t msg_t;
-typedef struct proto_reply_t proto_reply_t;
-typedef struct ev_server ev_server;
 
 struct request {
 	ev_io io;
