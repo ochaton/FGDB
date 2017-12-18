@@ -102,20 +102,20 @@ int32_t hash_delete(hm_node_ptr node, str_t key) {
     }
     return 1;
 }
-int FLAG_OUT = 0;
+//int FLAG_OUT = 0;
 int32_t hash_erase_new(hm_node_ptr *node) {
     if (!(*node)) {
         return 0;
     }
-    int FLAG_IN  = 0;
+    /*int FLAG_IN  = 0;
     if (!FLAG_OUT && !FLAG_IN) {
         FLAG_OUT = 1;
         FLAG_IN = 1;
-    }
+    }*/
     for (uint32_t i = 0; i < MAX_HASH_NODE; i++) {
         if ((*node)->len_of_list[i] > MAX_HASH_DEP) {
             hash_erase_new((*node)->top[i]);
-            free((*node)->top[i]);
+            //free((*node)->top[i]);
         } else {
             if ((*node)->len_of_list[i] > 0) {
                 avl_erase((*node)->top[i]);
@@ -123,10 +123,13 @@ int32_t hash_erase_new(hm_node_ptr *node) {
 
         }
     }
-    if (FLAG_OUT && FLAG_IN && (*node)) {
+    /*if (FLAG_OUT && FLAG_IN && (*node)) {
         free(*node);
         FLAG_IN = 0;
         FLAG_OUT = 0;
+    }*/
+    if (*node) {
+        free(*node);
     }
     *node = NULL;
     return 1;
