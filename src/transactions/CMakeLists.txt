@@ -12,7 +12,9 @@ set(queue_source
 	queue.c
 	)
 
-add_subdirectory(../server server)
+if (NOT TARGET server)
+	add_subdirectory(../server server)
+endif()
 add_subdirectory(../lib/heap heap)
 
 add_library(transaction_queue STATIC ${queue_source})
