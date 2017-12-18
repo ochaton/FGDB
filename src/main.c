@@ -31,11 +31,12 @@
 
 #include "transactions/queue.h"
 
-arena_t   * arena;
-disk_t    * disk;
-lru_queue_t * lru;
-hashmap_t hashmap;
-queue_t * trans_queue;
+arena_t      *arena;
+disk_t       *disk;
+lru_queue_t  *lru;
+wal_logger_t *binary_logger;
+hashmap_t     hashmap;
+queue_t      *trans_queue;
 
 extern void operation_peek(req_t * req, hashmap_t hashmap);
 extern void operation_select(req_t * req, hashmap_t hashmap);
@@ -96,6 +97,8 @@ void * transaction_queue_worker (void * args) {
 			continue;
 		}
 
+		lsn_t LSN = write_log(binary_logger, trans);
+
 		switch(trans->msg->cmd) {
 			case PEEK:
 			{
@@ -137,6 +140,8 @@ int db_start(int argc, char const *argv[]) {
 	lru = new_lru_queue();
 	arena = new_arena(1024);
 	disk = init_disk("db.snap");
+	// TODO: add some logic to start logger with actual LSNs
+	binary_logger = new_wal_logger(0, 0, 1);
 	arena->headers = init_headers(1024);
 	hashmap = hashmap_new();
 }

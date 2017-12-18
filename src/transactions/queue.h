@@ -1,6 +1,10 @@
 #ifndef QUEUE_H
 #define QUEUE_H
 
+struct transaction_t;
+typedef struct transaction_t transaction_t;
+
+#include "common.h"
 #include "server/message.h"
 #include "server/request.h"
 #include "lib/heap/heap.h"
@@ -8,9 +12,11 @@
 #include <pthread.h>
 #include <semaphore.h>
 
-typedef struct {
+typedef struct request req_t;
+
+typedef struct transaction_t {
 	req_t* ancestor;
-	msg_t* msg;
+	struct msg_t* msg;
 } transaction_t;
 
 typedef struct {

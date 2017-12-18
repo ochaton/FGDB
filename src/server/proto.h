@@ -1,6 +1,9 @@
 #ifndef PROTO_H
 #define PROTO_H
 
+struct proto_reply_t;
+typedef struct proto_reply_t proto_reply_t;
+
 #include <stdint.h>
 #include <msgpack.h>
 #include "message.h"
@@ -23,12 +26,7 @@ enum fgdb_code_t {
 	KEY_NOT_FOUND = 0x2,
 };
 
-typedef struct {
-	// uint32_t seq;
-	msg_t msg;
-} proto_request_t;
-
-typedef struct {
+typedef struct proto_reply_t {
 	// uint32_t seq;
 	enum proto_reply_code_t code;
 	union {

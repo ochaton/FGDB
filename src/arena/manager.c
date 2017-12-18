@@ -46,6 +46,11 @@ void destroy_header(page_header_t * header) {
 	return;
 }
 
+void update_lsn(page_header_t * header, lsn_t LSN) {
+	header->pLSN = LSN;
+	return;
+}
+
 page_header_t * headers_new_page(void) {
 	page_header_t * header = (page_header_t *) malloc(sizeof(page_header_t));
 	if (!header) {

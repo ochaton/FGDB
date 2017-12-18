@@ -7,6 +7,7 @@
 #include "common.h"
 #include "memory/hashmap.h"
 #include "lib/vector/vector.h"
+#include "wal/wal.h"
 
 typedef struct page_header_key_t {
 	uint16_t offset;
@@ -29,6 +30,9 @@ typedef struct page_header {
 
 	struct vector *keys;
 	struct page_header *lru_next, *lru_prev;
+
+	// pLSN - the first LSN that made page DIRTY
+	lsn_t pLSN;
 
 	page_id_t page_id;
 	arena_page_id_t arena_id;
@@ -57,6 +61,7 @@ typedef struct key_meta_t key_meta_t;
 
 page_headers_vector_t * init_headers(size_t pages);
 void destroy_headers(void);
+void update_lsn(page_header_t* header, lsn_t LSN);
 page_header_t * headers_new_page(void);
 page_header_t * headers_alloc_page(size_t value_size);
 page_header_t * page_value_set(str_t * value, key_meta_t * key);
