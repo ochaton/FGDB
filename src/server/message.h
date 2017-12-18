@@ -7,7 +7,7 @@ enum msg_command_t {
 	INSERT = 0x3,
 	UPDATE = 0x4,
 	DELETE = 0x5,
-};
+} __attribute__ ((__packed__));
 
 struct msg_t;
 typedef struct msg_t msg_t;

@@ -29,6 +29,7 @@ void setUp() {
 	disk = init_disk("db.snap");
 	arena->headers = init_headers(1024);
 	hashmap = hashmap_new(); // ????
+	unlink("log/0000000000000000000001.log");
 }
 
 void tearDown() {
@@ -122,12 +123,16 @@ void binary_structure_test(void) {
 	wal_log_record_t* r = to_wal_record(l, &t);
 	TEST_ASSERT_MESSAGE(r->LSN == 1235, "LSN must be old_LSN + 1");
 	binary_record_t*  b = to_binary(r);
-	TEST_ASSERT_MESSAGE(*((lsn_t*)    &b->ptr[0])  == 1235,   "LSN is not gone");
-	TEST_ASSERT_MESSAGE(*((char*)     &b->ptr[8])  == INSERT, "OPERATION is not gone");
-	TEST_ASSERT_MESSAGE(*((uint16_t*) &b->ptr[9])  == 3,      "KEY SIZE is not gone");
-	TEST_ASSERT_EQUAL_STRING_LEN(m.key.ptr, &b->ptr[11], 3);
-	TEST_ASSERT_MESSAGE(*((uint16_t*) &b->ptr[14]) == 5,      "VAL SIZE is not gone");
-	TEST_ASSERT_EQUAL_STRING_LEN(m.val.ptr, &b->ptr[16], 5);
+	TEST_ASSERT_MESSAGE(*((lsn_t*)    &b->ptr[8])  == 1235,   "LSN is not gone");
+	TEST_ASSERT_MESSAGE(*((char*)     &b->ptr[16])  == INSERT, "OPERATION is not gone");
+	TEST_ASSERT_MESSAGE(*((uint16_t*) &b->ptr[17])  == 3,      "KEY SIZE is not gone");
+	TEST_ASSERT_EQUAL_STRING_LEN(m.key.ptr, &b->ptr[19], 3);
+	TEST_ASSERT_MESSAGE(*((uint16_t*) &b->ptr[22]) == 5,      "VAL SIZE is not gone");
+	TEST_ASSERT_EQUAL_STRING_LEN(m.val.ptr, &b->ptr[24], 5);
+
+	destroy_binary_record(b);
+	destroy_wal_record(r);
+	destroy_wal_logger(l);
 }
 
 void binary_logs_writing_test(void) {
@@ -136,26 +141,35 @@ void binary_logs_writing_test(void) {
 		{ 3, "key" },
 		{ 5, "value" }
 	};
+
 	transaction_t t = { NULL, &m };
 	wal_logger_t* l = new_wal_logger(0, 0, 1);
 	write_log(l, &t);
+
 	msg_t m2 = {
 		UPDATE,
 		{ 4, "key1" },
 		{ 6, "value1" }
 	};
+
 	transaction_t t2 = { NULL, &m2 };
 	write_log(l, &t2);
 	wal_unlogger_t* u = new_unlogger("log/0000000000000000000001.log");
 	transaction_t* rt = recover_transaction(u);
-	TEST_ASSERT_EQUAL_STRING_LEN(rt->msg->key.ptr, "key",   rt->msg->key.size);
-	TEST_ASSERT_EQUAL_STRING_LEN(rt->msg->val.ptr, "value", rt->msg->val.size);
+	TEST_ASSERT_EQUAL_STRING_LEN("key", rt->msg->key.ptr, rt->msg->key.size);
+	TEST_ASSERT_EQUAL_STRING_LEN("value", rt->msg->val.ptr, rt->msg->val.size);
 	TEST_ASSERT_MESSAGE(rt->msg->cmd == INSERT, "OPERATIONS are the same 1");
 
+	destroy_transaction(rt);
+
 	rt = recover_transaction(u);
-	TEST_ASSERT_EQUAL_STRING_LEN(rt->msg->key.ptr, "key1",   rt->msg->key.size);
-	TEST_ASSERT_EQUAL_STRING_LEN(rt->msg->val.ptr, "value1", rt->msg->val.size);
+	TEST_ASSERT_EQUAL_STRING_LEN("key1",   rt->msg->key.ptr, rt->msg->key.size);
+	TEST_ASSERT_EQUAL_STRING_LEN("value1", rt->msg->val.ptr, rt->msg->val.size);
 	TEST_ASSERT_MESSAGE(rt->msg->cmd == UPDATE, "OPERATIONS are the same 2");
+
+	destroy_transaction(rt);
+	destroy_wal_unlogger(u);
+	destroy_wal_logger(l);
 }
 
 int main(void) {

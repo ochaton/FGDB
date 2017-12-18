@@ -36,8 +36,8 @@ typedef struct {
 } wal_logger_t;
 
 typedef struct {
-	uint64_t size;
-	char*    ptr;
+	size_t size;
+	char*  ptr;
 } binary_record_t;
 
 typedef struct {

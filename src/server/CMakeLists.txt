@@ -49,8 +49,10 @@ set(request_sources
 	log.c
 	proto.c
 	buffer.c
-	message.c
 	)
+
+set(message_sources
+	message.c)
 
 set(server_sources
 	staff.c
@@ -59,6 +61,7 @@ set(server_sources
 
 add_library(server STATIC ${server_sources})
 add_library(request STATIC ${request_sources})
+add_library(message STATIC ${message_sources})
 
 target_link_libraries(request
 	${LIBEV_LIBRARIES}

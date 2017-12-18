@@ -1,10 +1,13 @@
+#define _GNU_SOURCE
+#include <string.h>
+
 #include  "wal/wal.h"
 
 wal_logger_t* new_wal_logger(lsn_t LSN, lsn_t fLSN, uint32_t log_id) {
 	wal_logger_t* w = malloc(sizeof(wal_logger_t));
 
 	//creating new file for logs
-	char* path = malloc(31*sizeof(char));
+	char path[48];
 	sprintf(path, "log/%022i.log", log_id);
 
 	if (mkdir("log", 0777) == -1 && errno != EEXIST) {
@@ -34,32 +37,39 @@ lsn_t write_log(wal_logger_t* w, transaction_t* t) {
 	wal_log_record_t* wr = to_wal_record(w, t);
 	// operation is not logged
 	if (!wr) {
-		return (lsn_t) 0;
+		return 0;
 	}
-	binary_record_t*  br = to_binary(wr);
-	if ((uint64_t) write(w->file, br->ptr, br->size) != br->size) {
-		fprintf(stderr, "Problems while writing binary logs: %s\n", strerror(errno));
-		exit(errno);
+
+	binary_record_t *  br = to_binary(wr);
+	size_t written = 0;
+	while (written < br->size) {
+		ssize_t bytes;
+		if (-1 == (bytes = write(w->file, br->ptr + written, br->size - written))) {
+			if (errno == EAGAIN || errno == EINTR) {
+				// Should never happen
+			} else {
+				fprintf(stderr, "Problems while writing binary logs: %s\n", strerror(errno));
+				exit(errno);
+			}
+		}
+
+		written += bytes;
 	}
 
 	// adding \n after every log line for easier parsing in vim binary mode
-	if (write(w->file, "\n", 1) != 1) {
-		fprintf(stderr, "Problems while writing binary logs: %s\n", strerror(errno));
-		exit(errno);
-	}
-	destroy_binary_record(br);
+	// if (write(w->file, "\n", 1) != 1) {
+	// 	fprintf(stderr, "Problems while writing binary logs: %s\n", strerror(errno));
+	// 	exit(errno);
+	// }
+
 	lsn_t LSN = wr->LSN;
+	destroy_binary_record(br);
 	destroy_wal_record(wr);
 	return LSN;
 }
 
-static void continous_copy (void* dest, void* src, uint16_t size, uint64_t* shift) {
-	memcpy(dest, src, size);
-	*shift += size;
-	return;
-}
-
 // binary log has following structure
+// length    8 bytes (keeps own size inside itself)
 // LSN       8 bytes
 // operation 1 byte
 // key
@@ -72,20 +82,20 @@ static void continous_copy (void* dest, void* src, uint16_t size, uint64_t* shif
 // LSN      op size val  size val
 binary_record_t* to_binary(wal_log_record_t* r) {
 	binary_record_t* br = malloc(sizeof(binary_record_t));
-	br->size = 8+1+2+(r->key.size)+2+(r->val.size);
-	br->ptr  = malloc(br->size * sizeof(char));
+	br->size = sizeof(br->size)
+		+ sizeof(r->LSN)
+		+ sizeof(r->operation)
+		+ sizeof(r->key.size) + r->key.size
+		+ sizeof(r->val.size) + r->val.size;
 
-	char* p = br->ptr;
-	//make sure it IS EXACTLY 1 byte
-	char op = (char) r->operation;
-	uint64_t shift = 0;
-	continous_copy(&p[shift], &r->LSN,      sizeof(r->LSN),             &shift);
-	// continous_copy(&p[shift], &r->pid,      sizeof(r->pid),             &shift);
-	continous_copy(&p[shift], &op,          sizeof(op),                 &shift);
-	continous_copy(&p[shift], &r->key.size, sizeof(r->key.size),        &shift);
-	continous_copy(&p[shift], r->key.ptr,   sizeof(char) * r->key.size, &shift);
-	continous_copy(&p[shift], &r->val.size, sizeof(r->val.size),        &shift);
-	continous_copy(&p[shift], r->val.ptr,   sizeof(char) * r->val.size, &shift);
+	char * p = br->ptr  = malloc(br->size);
+	p = mempcpy(p,    &br->size, sizeof(br->size));
+	p = mempcpy(p,            r, sizeof(r->LSN) + sizeof(r->operation));
+	p = mempcpy(p, &r->key.size, sizeof(r->key.size));
+	p = mempcpy(p,   r->key.ptr, r->key.size);
+	p = mempcpy(p, &r->val.size, sizeof(r->val.size));
+	p = mempcpy(p,   r->val.ptr, r->val.size);
+
 	return br;
 }
 
@@ -108,14 +118,14 @@ wal_log_record_t* to_wal_record(wal_logger_t* w, transaction_t* t) {
 	wal_log_record_t* r = malloc(sizeof(wal_log_record_t));
 
 	r->operation = t->msg->cmd;
-	msg_t* m = t->msg;
-	r->key.size = m->key.size;
-	r->key.ptr  = malloc(r->key.size * sizeof(char));
-	memcpy(r->key.ptr, m->key.ptr, m->key.size);
+	msg_t* msg = t->msg;
+	r->key.size = msg->key.size;
+	r->key.ptr  = malloc(r->key.size);
+	memcpy(r->key.ptr, msg->key.ptr, msg->key.size);
 
-	r->val.size = m->val.size;
-	r->val.ptr  = malloc(r->val.size * sizeof(char));
-	memcpy(r->val.ptr, m->val.ptr, m->val.size);
+	r->val.size = msg->val.size;
+	r->val.ptr  = malloc(r->val.size);
+	memcpy(r->val.ptr, msg->val.ptr, msg->val.size);
 
 	r->LSN = give_new_LSN(w);
 	return r;
@@ -151,57 +161,46 @@ wal_unlogger_t* new_unlogger(char* path) {
 	return u;
 }
 
-static void read_to_buf(int file, char* buf, uint64_t size) {
-	ssize_t size_read;
-	size_read = read(file, buf, size);
-	if ((uint64_t) size_read != size) {
-		fprintf(stderr, "Error reading binary log: %s\n", strerror(errno));
+transaction_t* recover_transaction(wal_unlogger_t* u) {
+	binary_record_t br;
+	if (-1 == read(u->file, &br.size, sizeof(br.size))) {
+		fprintf(stderr, "Error reading binary log (size): %s\n", strerror(errno));
 		exit(errno);
 	}
-}
 
-transaction_t* recover_transaction(wal_unlogger_t* u) {
-	transaction_t* t = malloc(sizeof(transaction_t));
+	br.size -= sizeof(br.size);
+	br.ptr = (char *) malloc(br.size);
+	if (-1 == read(u->file, br.ptr, br.size)) {
+		fprintf(stderr, "Error reading binary log (record): %s\n", strerror(errno));
+		exit(errno);
+	}
 
-	char* buf8 = malloc(8*sizeof(char));
-	char* buf2 = malloc(2*sizeof(char));
-	char* buf1 = malloc(1*sizeof(char));
+	wal_log_record_t * wr = malloc(sizeof(wal_log_record_t));
+	char *p = br.ptr;
 
-	read_to_buf(u->file, buf8, 8);
-	uint64_t LSN   = *((uint64_t*) buf8);
-
-	read_to_buf(u->file, buf1, 1);
-	uint16_t op    = *((char*)     buf1);
-
-	// read key from log
-	read_to_buf(u->file, buf2, 2);
-	uint16_t ksize = *((uint16_t*) buf2);
-	char* key_buf = malloc(sizeof(char) * ksize);
-	read_to_buf(u->file, key_buf, ksize);
-
-	// read val from log
-	read_to_buf(u->file, buf2, 2);
-	uint16_t vsize = *((uint16_t*) buf2);
-	char* val_buf = malloc(sizeof(char) * vsize);
-	read_to_buf(u->file, val_buf, vsize);
-
-	// read following \n
-	read_to_buf(u->file, buf1, 1);
-
-	msg_t* m = malloc(sizeof(msg_t));
-	m->key.size = ksize;
-	m->key.ptr  = key_buf;
-	m->val.size = vsize;
-	m->val.ptr  = val_buf;
-	m->cmd      = (enum msg_command_t) op;
+	memcpy(&wr->LSN, p, sizeof(wr->LSN));              p += sizeof(wr->LSN);
+	memcpy(&wr->operation, p, sizeof(wr->operation));  p += sizeof(wr->operation);
 
 	// NULL ancestor as long as we don't really have any
+	transaction_t* t = malloc(sizeof(transaction_t));
 	t->ancestor = NULL;
-	t->msg      = m;
 
-	free(buf8);
-	free(buf2);
-	free(buf1);
+	t->msg = malloc(sizeof(msg_t));
+	t->msg->cmd = wr->operation;
+
+	memcpy(&t->msg->key.size, p, sizeof(t->msg->key.size)); p += sizeof(t->msg->key.size);
+	t->msg->key.ptr = (char *) malloc(t->msg->key.size);
+	memcpy(t->msg->key.ptr, p, t->msg->key.size);           p += t->msg->key.size;
+
+	memcpy(&t->msg->val.size, p, sizeof(t->msg->val.size)); p += sizeof(t->msg->val.size);
+	t->msg->val.ptr = (char *) malloc(t->msg->val.size);
+	memcpy(t->msg->val.ptr, p, t->msg->val.size);           p += t->msg->val.size;
+
+	assert((uint64_t) p == (uint64_t) br.ptr + br.size); // WAL-log line was read completely
+
+	free(wr);
+	free(br.ptr);
+
 	return t;
 }
 
