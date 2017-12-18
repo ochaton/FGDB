@@ -156,10 +156,8 @@ void test5() {
 		pages[i] = i;
 		keys[i].size = i;
 		keys[i].ptr = (char *) malloc( (i + 1) * sizeof(char));
-		for (int j = 0; j <= i; j++) {
-			keys[i].ptr[j] = 'a';
-		}
-		keys[i].ptr[i] ++;
+		memset(keys[i].ptr, 'a', i);
+		keys[i].ptr[i]++;
 	}
 	for (int i = 0; i < 1000; i++) {
 		TEST_ASSERT_MESSAGE(hash_insert(hashmap, keys[i], &pages[i]) == 1, "Must inserted with status = 1");
@@ -183,10 +181,8 @@ void test6() {
 		pages[i] = i;
 		keys[i].size = i;
 		keys[i].ptr = (char *) malloc( (i + 1) * sizeof(char));
-		for (int j = 0; j <= i; j++) {
-			keys[i].ptr[j] = 'a';
-		}
-		keys[i].ptr[i] ++;
+		memset(keys[i].ptr, 'a', i);
+		keys[i].ptr[i]++;
 	}
 	for (int i = 0; i < 1000; i++) {
 		TEST_ASSERT_MESSAGE(hash_insert(hashmap, keys[i], &pages[i]) == 1, "Must inserted with status = 1");
@@ -213,10 +209,8 @@ void test7() {
 		pages[i] = i;
 		keys[i].size = i;
 		keys[i].ptr = (char *) malloc( (i + 1) * sizeof(char));
-		for (int j = 0; j <= i; j++) {
-			keys[i].ptr[j] = 'a';
-		}
-		keys[i].ptr[i] ++;
+		memset(keys[i].ptr, 'a', i);
+		keys[i].ptr[i]++;
 	}
 	for (int i = 0; i < 1000; i++) {
 		TEST_ASSERT_MESSAGE(hash_insert(hashmap, keys[i], &pages[i]) == 1, "Must inserted with status = 1");

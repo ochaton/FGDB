@@ -12,14 +12,6 @@ static void __avl_LR_move(avlnode_ptr *node);
 static void __avl_RL_move(avlnode_ptr *node);
 
 
-void avl_test_print(avlnode_ptr go) {
-    if (!go) {
-        return;
-    }
-    avl_test_print(go->left);
-    avl_test_print(go->right);
-    printf("A_Node is %s\n", go->key.ptr);
-}
 int32_t avl_new_node(avlnode_ptr *new_node, str_t key, void *meta) {
 
     avlnode_ptr mid_node = (avlnode *) malloc(sizeof(avlnode));
@@ -41,21 +33,6 @@ avlnode_ptr avl_search(avlnode_ptr node, str_t key) {
     if (!node) {
         return NULL;
     }
-    if (!key_comp(node->key, key)) {
-        return node;
-    } else {
-        if (key_comp(node->key, key) > 0) {
-            return avl_search(node->right, key);
-        } else {
-            return avl_search(node->left, key);
-        }
-    }
-}
-
-avlnode_ptr avl_search_line(avlnode_ptr node, str_t key) {
-    if (!node) {
-        return NULL;
-    }
     int32_t mid = key_comp(node->key, key);
     while ((node) && (mid != 0)) {
         if (mid > 0) {
@@ -69,6 +46,7 @@ avlnode_ptr avl_search_line(avlnode_ptr node, str_t key) {
     }
     return node;
 }
+
 int32_t avl_insert_node(avlnode_ptr *node, avlnode_ptr node_new) {
     if (key_comp((*node)->key, node_new->key) > 0) {
         if ((*node)->right) {
@@ -90,7 +68,6 @@ int32_t avl_insert_node(avlnode_ptr *node, avlnode_ptr node_new) {
             (*node)->left->parent = *node;
         }
     } else {
-        //printf("WTF!!!!!!!!  %s\n",node_new->key.ptr );
         return -1;
     }
     avl_calc_hight(*node);
@@ -119,10 +96,10 @@ int32_t avl_remove_node(avlnode_ptr *node, avlnode_ptr node_new) {
     }
     if (key_comp((*node)->key, node_new->key) > 0) {
         avlnode_ptr mid = (*node)->right;
-        avl_remove_node(&(mid), node_new);
+        avl_remove_node(&mid, node_new);
     } else if (key_comp((*node)->key, node_new->key) < 0) {
         avlnode_ptr mid = (*node)->left;
-        avl_remove_node(&(mid), node_new);
+        avl_remove_node(&mid, node_new);
     } else {
         if (!(*node)->left && !(*node)->right) {
             avlnode_ptr last = (*node)->parent;
@@ -197,15 +174,6 @@ int32_t avl_remove_node(avlnode_ptr *node, avlnode_ptr node_new) {
             avl_delete_node(&mid1);
 
         } else if ((*node)->right) {
-            int ww = 0;
-            if ((*node)->key.ptr[0] == 'W') {
-                ww = 1;
-                printf("AA_Node is ");
-                for (int32_t i = 0; i < (*node)->key.size; i++) {
-                    printf("%c", (*node)->key.ptr[i]);
-                }
-                printf("\n");
-            }
             avlnode_ptr mid1 = (*node)->right;
             str_t kkey = (*node)->key;
             (*node)->key = mid1->key;

@@ -3,18 +3,6 @@
 #include "HashMap.h"
 
 
-void hash_test_tree_print(avlnode_ptr go) {
-    if (!go) {
-        return;
-    }
-    hash_test_tree_print(go->left);
-    hash_test_tree_print(go->right);
-    printf("H_Node is ");
-    for (int32_t i = 0; i < go->key.size; i++) {
-        printf("%c", go->key.ptr[i]);
-    }
-    printf("\n");
-}
 int32_t hash_new_node(hm_node_ptr *node, uint32_t dep) {
     //create new hash table
     if (!node) {
@@ -41,7 +29,7 @@ avlnode_ptr hash_search(hm_node_ptr node, str_t key) {
     while (1) {
         if (node->len_of_list[mid_key] < MAX_HASH_DEP) {
             //avlnode_ptr mid = avl_search(node->top[mid_key], key);
-            avlnode_ptr mid1 = avl_search_line(node->top[mid_key], key);
+            avlnode_ptr mid1 = avl_search(node->top[mid_key], key);
             return mid1;
         } else {
             node = node->top[mid_key];
@@ -59,7 +47,7 @@ int32_t hash_insert(hm_node_ptr node, str_t key, void *meta) {
         node = node->top[mid_key];
         mid_key = hash(key, node->dep);
     }
-    //printf("mid_key is %d; key is %s\n",mid_key,key.ptr );
+
     avlnode_ptr new_avl_node;
     avl_new_node(&new_avl_node, key, meta);
     if (!node->top[mid_key]) {
@@ -102,16 +90,11 @@ int32_t hash_delete(hm_node_ptr node, str_t key) {
     }
     return 1;
 }
-//int FLAG_OUT = 0;
+
 int32_t hash_erase_new(hm_node_ptr *node) {
     if (!(*node)) {
         return 0;
     }
-    /*int FLAG_IN  = 0;
-    if (!FLAG_OUT && !FLAG_IN) {
-        FLAG_OUT = 1;
-        FLAG_IN = 1;
-    }*/
     for (uint32_t i = 0; i < MAX_HASH_NODE; i++) {
         if ((*node)->len_of_list[i] > MAX_HASH_DEP) {
             hash_erase_new((*node)->top[i]);
@@ -123,49 +106,12 @@ int32_t hash_erase_new(hm_node_ptr *node) {
 
         }
     }
-    /*if (FLAG_OUT && FLAG_IN && (*node)) {
-        free(*node);
-        FLAG_IN = 0;
-        FLAG_OUT = 0;
-    }*/
     if (*node) {
         free(*node);
     }
     *node = NULL;
     return 1;
 }
-/*int FLAG_OUT_1 = 0;
-int32_t hash_erase(hm_node_ptr node) {
-    if (!node) {
-        return 0;
-    }
-    int FLAG_IN_1 = 0;
-    if (!FLAG_IN_1 && !FLAG_OUT_1) {
-        FLAG_OUT_1 = 1;
-        FLAG_IN_1 = 1;
-    }
-    for (uint32_t i = 0; i < MAX_HASH_NODE; i++) {
-        if (node->len_of_list[i] > MAX_HASH_DEP) {
-            hash_erase(node->top[i]);
-            free(node->top[i]);
-        } else {
-            if (node->len_of_list[i] > 0) {
-                avl_erase(node->top[i]);
-            }
-
-        }
-    }
-    if (FLAG_OUT_1 && FLAG_IN_1 && node) {
-        free(node);
-        FLAG_IN_1 =0;
-        FLAG_OUT_1 = 0;
-    }
-    if (node) {
-        free(node);
-    }
-
-    return 1;
-}*/
 
 int32_t __hash_remake(hm_node_ptr node, uint32_t index) {
     //if == then it is flag that make new hash, if > that it is hash
