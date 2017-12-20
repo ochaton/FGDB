@@ -5,7 +5,6 @@ struct key_meta_t;
 struct page_header_key_t;
 struct page_header;
 
-typedef struct key_meta_t key_meta_t;
 typedef struct page_header_key_t page_header_key_t;
 typedef struct page_header page_header_t;
 
@@ -74,5 +73,8 @@ page_header_t * page_value_set(str_t * value, key_meta_t * key);
 page_header_t * page_value_get(key_meta_t * key, str_t * retval);
 page_header_t * page_value_unset(key_meta_t * key, str_t * value);
 
+page_header_key_t * headers_push_key(page_header_t * header, key_meta_t * key, off_t page_offset);
+
+void snapshot(void);
 
 #endif //FGDB_META_PAGES_H

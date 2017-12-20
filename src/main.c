@@ -28,6 +28,7 @@
 #include "lib/buddy/memory.h"
 #include "memory/hashmap.h"
 #include "lru/lruq.h"
+#include "arena/meta.h"
 
 #include "transactions/queue.h"
 
@@ -153,15 +154,22 @@ int db_start(int argc, char const *argv[]) {
 
 	uint64_t keys;
 	for (keys = 0; keys < disk->nkeys; ++keys) {
-		hashmap_key_t key;
-		if (-1 == disk_upload_key(disk, &key)) {
+		hashmap_key_t disk_key;
+		if (-1 == disk_upload_key(disk, &disk_key)) {
 			break;
 		}
 
+		page_header_t * header = VECTOR_GET(arena->headers[0], page_header_t*, disk_key.page_id);
+
+		key_meta_t * meta = (key_meta_t *) malloc(sizeof(key_meta_t));
+		headers_push_key(header, meta, disk_key.offset);
+
 		hashmap_error_t err;
-		if (-1 == hashmap_insert_key(hashmap, key.meta, key.key, &err)) {
-			fprintf(stderr, "Failed on inserting key: %s. (%s)\n", key.key->ptr, hashmap_error[err]);
+		if (-1 == hashmap_insert_key(hashmap, meta, disk_key.key, &err)) {
+			fprintf(stderr, "Failed on inserting key: %s. (%s)\n", disk_key.key->ptr, hashmap_error[err]);
 			exit(EXIT_FAILURE);
+		} else {
+			fprintf(stderr, "Successfully inserted %s\n", disk_key.key->ptr);
 		}
 	}
 
@@ -188,8 +196,46 @@ int start_server() {
 	return EXIT_SUCCESS;
 }
 
+void shutdown_handler(int signum) {
+	// TODO: gracefull
+	destroy_headers();
+	destroy_arena(arena);
+	hashmap_delete(hashmap);
+	buddy_destroy();
+	destroy_lru_queue(lru);
+	destroy_disk(disk);
+
+	exit(EXIT_SUCCESS);
+}
+
+void snapshot_handler(int signum) {
+	fprintf(stderr, "Snapshot creating...");
+	snapshot();
+	fprintf(stderr, "Snapshot done\n");
+}
+
 int main(int argc, char const *argv[]) {
 	db_start(argc, argv);
+
+	struct sigaction sa;
+	sa.sa_handler = shutdown_handler;
+	sa.sa_flags = 0;
+
+	sigaction(SIGTERM, &sa, 0);
+	sigaction(SIGINT, &sa, 0);
+
+	struct sigaction sa_snap;
+	sa_snap.sa_handler = snapshot_handler;
+	sa_snap.sa_flags = 0;
+
+	sigaction(SIGUSR1, &sa_snap, 0);
+
+	sigset_t sigset;
+	sigfillset(&sigset);
+	sigdelset(&sigset, SIGTERM);
+	sigdelset(&sigset, SIGINT);
+	sigdelset(&sigset, SIGUSR1);
+	sigprocmask(SIG_BLOCK, &sigset, NULL);
 
 	if (NULL == (trans_queue = init_queue())) {
 		fprintf(stderr, "Queue not allocated errno=%s\n", strerror(errno));

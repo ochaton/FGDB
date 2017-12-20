@@ -20,6 +20,8 @@ page_headers_vector_t * init_headers(size_t pages) {
 }
 
 void destroy_headers(void) {
+	disk_dump_keys(disk);
+
 	for (size_t i = 0; i < arena->headers->total; i++) {
 		destroy_header(arena->headers->items[i]);
 	}
@@ -27,6 +29,19 @@ void destroy_headers(void) {
 	vector_free(arena->headers);
 	free(arena->headers);
 	return;
+}
+
+void snapshot(void) {
+
+	disk_dump_keys(disk);
+	for (page_id_t page_id = 0; page_id < arena->headers->total; page_id++) {
+		page_header_t * header = VECTOR_GET(arena->headers[0], page_header_t *, page_id);
+
+		if (header->state == PAGE_DIRTY) {
+			arena_defragmentate_page(header->arena_id, header);
+			disk_dump_page(header->page_id, header->arena_id);
+		}
+	}
 }
 
 void destroy_header(page_header_t * header) {

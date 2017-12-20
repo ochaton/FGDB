@@ -151,8 +151,11 @@ void operation_insert(req_t * req, hashmap_t hashmap, lsn_t LSN) {
 	/* Insert key into hashmap */
 
 	str_t * copykey = string_copy(&req->msg->key);
+	new_key_meta->weak_key = copykey;
 	if (-1 == hashmap_insert_key(hashmap, new_key_meta, copykey, &err)) {
 		req->log->error(req->log, "Fatal error on inserting key %s", hashmap_error[err]);
+
+		destroy_string(copykey);
 
 		str_t unset_value;
 		if (page_value_unset(new_key_meta, &unset_value)) {

@@ -18,7 +18,6 @@ typedef struct disk {
 
 	lsn_t lsn;
 
-	/* fd for snapshot of values */
 	int vfd;
 	int kfd;
 } disk_t;
@@ -29,12 +28,13 @@ typedef struct disk {
 
 typedef struct binary_key_t {
 	size_t length;
-	key_meta_t meta;
+	page_id_t page_id;
+	uint16_t offset;
 	struct {
 		uint16_t size;
 		char ptr[1];
 	} key;
-} binary_key_t;
+} __attribute__ ((__packed__)) binary_key_t;
 
 #include "config.h"
 
@@ -43,7 +43,7 @@ void destroy_disk(disk_t * disk);
 void disk_upload_page(disk_t *disk, page_id_t disk_page_idx, arena_page_id_t arena_idx);
 void disk_dump_page(page_id_t page_idx, arena_page_id_t arena_idx);
 void disk_new_page(disk_t * disk);
-int disk_dump_key(disk_t * disk, avlnode_ptr keynode);
+int disk_dump_keys(disk_t * disk);
 int disk_upload_key(disk_t * disk, hashmap_key_t * key);
 
 

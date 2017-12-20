@@ -123,23 +123,37 @@ void disk_dump_page(page_id_t page_idx, arena_page_id_t arena_idx) {
  * key (...)
  **/
 
-// int disk_dump_key(disk_t * disk, avlnode_ptr keynode) {
-// 	key_meta_t * meta = (key_meta_t *) keynode->meta;
+int disk_dump_keys(disk_t * disk) {
 
-// 	size_t length = sizeof(*meta) + sizeof(keynode->key.size) + keynode->key.size;
-// 	binary_key_t * record = (binary_key_t *) malloc(length);
+	for (page_id_t page_id = 0; page_id < arena->headers->total; page_id++) {
+		page_header_t * header = VECTOR_GET(arena->headers[0], page_header_t*, page_id);
 
-// 	record->key.size = keynode->key.size;
+		for (size_t key_id = 0; key_id < header->keys->total; key_id++) {
+			page_header_key_t * page_key = VECTOR_GET(header->keys[0], page_header_key_t*, key_id);
 
-// 	memcpy(&record->key.ptr[0], keynode->key.ptr, keynode->key.size);
-// 	record->length = length + sizeof(record->length);
+			key_meta_t * meta = page_key->key_meta_ptr;
+			size_t length = sizeof(meta->page)
+				+ sizeof(page_key->offset)
+				+ sizeof(meta->weak_key->size)
+				+ meta->weak_key->size;
 
-// 	write(disk->kfd, record, record->length);
+			char * buffer;
+			char * p = buffer = malloc(length + sizeof(length));
 
-// 	disk->keys_dumped++;
+			memcpy(p, &length, sizeof(length));                             p += sizeof(length);
+			memcpy(p, &meta->page, sizeof(meta->page));                     p += sizeof(meta->page);
+			memcpy(p, &page_key->offset, sizeof(page_key->offset));         p += sizeof(page_key->offset);
+			memcpy(p, &meta->weak_key->size, sizeof(meta->weak_key->size)); p += sizeof(meta->weak_key->size);
+			memcpy(p, meta->weak_key->ptr, meta->weak_key->size);           p += meta->weak_key->size;
 
-// 	free(record);
-// }
+			length += sizeof(length);
+			write(disk->kfd, buffer, length);
+			free(buffer);
+
+			disk->keys_dumped++;
+		}
+	}
+}
 
 int disk_upload_key(disk_t * disk, hashmap_key_t * ret) {
 
@@ -162,12 +176,10 @@ int disk_upload_key(disk_t * disk, hashmap_key_t * ret) {
 	ret->key->ptr = (char *) malloc(ret->key->size);
 
 	memcpy(ret->key->ptr, &record->key.ptr[0], record->key.size);
-
-	ret->meta = (key_meta_t *) malloc(sizeof(key_meta_t));
-	memcpy(ret->meta, &record->meta, sizeof(record->meta));
+	ret->offset = record->offset;
+	ret->page_id = record->page_id;
 
 	free(record);
-
 	return 0;
 }
 
