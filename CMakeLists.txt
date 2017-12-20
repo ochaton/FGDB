@@ -38,7 +38,7 @@ set(memory_sources
 	src/memory/hashmap.c)
 
 set(operation_sources
-	src/operations.c)
+	src/operations/operations.c)
 
 add_library(arena STATIC ${arena_sources})
 add_library(disk STATIC ${disk_sources})

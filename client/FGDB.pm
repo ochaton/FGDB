@@ -40,7 +40,7 @@ sub send_message {
 	warn "Got from socket: " .(length $buffer) if DEBUG > 1;
 
 	my @reply_code  = qw (OK ERROR FATAL);
-	my @fgdb_code   = qw (CODE_OK KEY_EXISTS KEY_NOT_FOUND);
+	my @fgdb_code   = qw (CODE_OK KEY_EXISTS KEY_NOT_FOUND OPERATION_UNKNOWN);
 	my @proto_error = qw (UNKNOWN ERROR_COMMAND);
 
 

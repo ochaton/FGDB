@@ -28,22 +28,16 @@
 #include "lib/buddy/memory.h"
 #include "memory/hashmap.h"
 #include "lru/lruq.h"
+#include "operations/operations.h"
 
 #include "transactions/queue.h"
 
 arena_t      *arena;
 disk_t       *disk;
 lru_queue_t  *lru;
-wal_logger_t *binary_logger;
+wal_logger_t *wal_logger;
 hashmap_t     hashmap;
 queue_t      *trans_queue;
-
-extern void operation_peek(req_t * req, hashmap_t hashmap);
-extern void operation_select(req_t * req, hashmap_t hashmap);
-extern void operation_delete(req_t * req, hashmap_t hashmap);
-extern void operation_insert(req_t * req, hashmap_t hashmap);
-extern void operation_update(req_t * req, hashmap_t hashmap);
-
 
 void on_request (req_t *req) {
 	req->log->info(req->log, "Starting processing request");
@@ -93,44 +87,50 @@ void * transaction_queue_worker (void * args) {
 	while (1) {
 
 		transaction_t * trans = pop_queue(trans_queue, 0);
+		req_t* req = trans->ancestor;
 		if (!trans) {
 			continue;
 		}
 
-		lsn_t LSN = write_log(binary_logger, trans);
+		proto_reply_t* db_reply;
 
 		switch(trans->msg->cmd) {
 			case PEEK:
 			{
-				operation_peek(trans->ancestor, hashmap);
+				db_reply = operation_peek(trans, hashmap);
 				break;
 			}
 			case SELECT:
 			{
-				operation_select(trans->ancestor, hashmap);
+				db_reply = operation_select(trans, hashmap);
 				break;
 			}
 			case INSERT:
 			{
-				operation_insert(trans->ancestor, hashmap);
+				db_reply = operation_insert(trans, hashmap);
 				break;
 			}
 			case DELETE:
 			{
-				operation_delete(trans->ancestor, hashmap);
+				db_reply = operation_delete(trans, hashmap);
 				break;
 			}
 			case UPDATE:
 			{
-				operation_update(trans->ancestor, hashmap);
+				db_reply = operation_update(trans, hashmap);
 				break;
 			}
 			default:
 			{
 				fprintf(stderr, "Unknown operation %d\n", trans->msg->cmd);
+				db_reply = malloc(sizeof(proto_reply_t));
+				db_reply->code = REPLY_ERROR;
+				db_reply->err  = OPERATION_UNKNOWN;
 				break;
 			}
 		}
+		request_reply(trans->ancestor, db_reply);
+		free(db_reply);
 	}
 
 }
@@ -141,7 +141,7 @@ int db_start(int argc, char const *argv[]) {
 	arena = new_arena(1024);
 	disk = init_disk("db.snap");
 	// TODO: add some logic to start logger with actual LSNs
-	binary_logger = new_wal_logger(0, 0, 1);
+	wal_logger = new_wal_logger(0, 0, 1);
 	arena->headers = init_headers(1024);
 	hashmap = hashmap_new();
 }

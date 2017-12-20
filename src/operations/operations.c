@@ -2,6 +2,7 @@
 #include "server/request.h"
 #include "server/proto.h"
 
+#include "wal/wal.h"
 #include "memory/hashmap.h"
 #include "lib/buddy/memory.h"
 #include "arena/meta.h"
@@ -10,103 +11,97 @@
 #include <string.h>
 #include <stdlib.h>
 
+extern wal_logger_t *wal_logger;
 
-void operation_peek(req_t * req, hashmap_t hashmap, lsn_t LSN);
-void operation_select(req_t * req, hashmap_t hashmap, lsn_t LSN);
-void operation_delete(req_t * req, hashmap_t hashmap, lsn_t LSN);
-void operation_insert(req_t * req, hashmap_t hashmap, lsn_t LSN);
-void operation_update(req_t * req, hashmap_t hashmap, lsn_t LSN);
-
-void operation_peek(req_t * req, hashmap_t hashmap, lsn_t LSN) {
+proto_reply_t* operation_peek(transaction_t * trans, hashmap_t hashmap) {
 	hashmap_error_t err;
+	req_t* req = trans->ancestor;
 	key_meta_t * key = hashmap_lookup_key(hashmap, &req->msg->key, &err);
-	proto_reply_t reply;
+	proto_reply_t* reply = malloc(sizeof(proto_reply_t));
 
 	if (!key) {
 		req->log->debug(req->log, "Key not found");
-		reply.code = REPLY_ERROR;
-		reply.err  = KEY_NOT_FOUND;
+		reply->code = REPLY_ERROR;
+		reply->err  = KEY_NOT_FOUND;
 	} else {
 		req->log->debug(req->log, "Key found");
-		reply.code = REPLY_OK;
-		reply.cmd  = req->msg->cmd;
+		reply->code = REPLY_OK;
+		reply->cmd  = req->msg->cmd;
 	}
 
-	request_reply(req, &reply);
-	return;
+	return reply;
 }
 
-void operation_select(req_t * req, hashmap_t hashmap, lsn_t LSN) {
+proto_reply_t* operation_select(transaction_t * trans, hashmap_t hashmap) {
 	hashmap_error_t err;
+	req_t* req = trans->ancestor;
 	key_meta_t * key_meta = hashmap_lookup_key(hashmap, &req->msg->key, &err);
-	proto_reply_t reply;
+	proto_reply_t* reply = malloc(sizeof(proto_reply_t));
 
 	if (!key_meta) {
 		req->log->info(req->log, "Key not found");
-		reply.code = REPLY_ERROR;
-		reply.err  = KEY_NOT_FOUND;
-		reply.cmd  = req->msg->cmd;
-		request_reply(req, &reply);
-		return;
+		reply->code = REPLY_ERROR;
+		reply->err  = KEY_NOT_FOUND;
+		reply->cmd  = req->msg->cmd;
+		return reply;
 	}
 
-	page_header_t * found_value_header = page_value_get(key_meta, &reply.val);
+	page_header_t * found_value_header = page_value_get(key_meta, &reply->val);
 
-	req->log->info(req->log, "Key found #value=%d", reply.val.size);
-	req->log->debug(req->log, "Value = `%s`", reply.val.ptr); // here should be xd
+	req->log->info(req->log, "Key found #value=%d", reply->val.size);
+	req->log->debug(req->log, "Value = `%s`", reply->val.ptr); // here should be xd
 
-	reply.code = REPLY_OK;
-	reply.cmd  = req->msg->cmd;
+	reply->code = REPLY_OK;
+	reply->cmd  = req->msg->cmd;
 
-	request_reply(req, &reply);
 }
 
-void operation_delete(req_t * req, hashmap_t hashmap, lsn_t LSN) {
-	proto_reply_t reply;
+proto_reply_t* operation_delete(transaction_t * trans, hashmap_t hashmap) {
+	proto_reply_t* reply = malloc(sizeof(proto_reply_t));
 
 	hashmap_error_t err;
+	req_t* req = trans->ancestor;
 	key_meta_t * deleted = hashmap_delete_key(hashmap, &req->msg->key, &err);
 
 	if (!deleted) {
 		req->log->info(req->log, "Key not found");
-		reply.code = REPLY_ERROR;
-		reply.err  = KEY_NOT_FOUND;
-		request_reply(req, &reply);
-		return;
+		reply->code = REPLY_ERROR;
+		reply->err  = KEY_NOT_FOUND;
+		return reply;
 	}
+	lsn_t LSN = write_log(wal_logger, trans);
 
-	page_header_t * header = page_value_unset(deleted, &reply.val);
+	page_header_t * header = page_value_unset(deleted, &reply->val);
 
 	if (!header) {
 		req->log->error(req->log, "Unsetting value failed while delete key");
-		reply.code  = REPLY_FATAL;
-		reply.cmd   = req->msg->cmd;
-		reply.fatal = PROTO_ERROR_UNKNOWN;
-		request_reply(req, &reply);
-		return;
+		reply->code  = REPLY_FATAL;
+		reply->cmd   = req->msg->cmd;
+		reply->fatal = PROTO_ERROR_UNKNOWN;
+		return reply;
 	}
 
 	update_lsn(header, LSN);
-	reply.code = REPLY_OK;
-	reply.cmd = req->msg->cmd;
+	reply->code = REPLY_OK;
+	reply->cmd = req->msg->cmd;
 
-	req->log->debug(req->log, "Replying value # = %ld {%*.*s}", reply.val.size, reply.val.size, reply.val.size, reply.val.ptr);
+	req->log->debug(req->log, "Replying value # = %ld {%*.*s}", reply->val.size, reply->val.size, reply->val.size, reply->val.ptr);
 
-	request_reply(req, &reply);
+	return reply;
 }
 
-void operation_insert(req_t * req, hashmap_t hashmap, lsn_t LSN) {
-	proto_reply_t reply;
+proto_reply_t* operation_insert(transaction_t * trans, hashmap_t hashmap) {
+	proto_reply_t* reply = malloc(sizeof(proto_reply_t));
+	req_t* req = trans->ancestor;
 
 	/* Validate incoming data */
 
 	if (!req->msg->val.size) {
 		req->log->error(req->log, "Value not found");
-		reply.code  = REPLY_FATAL;
-		reply.fatal = PROTO_ERROR_VALUE_REQUIRED;
+		reply->code  = REPLY_FATAL;
+		reply->fatal = PROTO_ERROR_VALUE_REQUIRED;
 
-		request_reply(req, &reply);
-		return;
+		return reply;
 	}
 
 	/* Lookup for existing key */
@@ -116,12 +111,13 @@ void operation_insert(req_t * req, hashmap_t hashmap, lsn_t LSN) {
 
 	if (key_found) {
 		req->log->error(req->log, "Key exists");
-		reply.code = REPLY_ERROR;
-		reply.err  = KEY_EXISTS;
+		reply->code = REPLY_ERROR;
+		reply->err  = KEY_EXISTS;
 
-		request_reply(req, &reply);
-		return;
+		return reply;
 	}
+
+	lsn_t LSN = write_log(wal_logger, trans);
 
 	/* Insert value into arena */
 
@@ -137,11 +133,10 @@ void operation_insert(req_t * req, hashmap_t hashmap, lsn_t LSN) {
 
 	if (!header) {
 		req->log->error(req->log, "Memory not allocated for value");
-		reply.code  = REPLY_FATAL;
-		reply.fatal = PROTO_ERROR_UNKNOWN;
+		reply->code  = REPLY_FATAL;
+		reply->fatal = PROTO_ERROR_UNKNOWN;
 
-		request_reply(req, &reply);
-		return;
+		return reply;
 	}
 
 	update_lsn(header, LSN);
@@ -160,25 +155,24 @@ void operation_insert(req_t * req, hashmap_t hashmap, lsn_t LSN) {
 			req->log->error(req->log, "Unsetting value failed");
 		}
 
-		reply.code  = REPLY_FATAL;
-		reply.fatal = PROTO_ERROR_UNKNOWN;
-		reply.cmd   = req->msg->cmd;
+		reply->code  = REPLY_FATAL;
+		reply->fatal = PROTO_ERROR_UNKNOWN;
+		reply->cmd   = req->msg->cmd;
 
-		request_reply(req, &reply);
-		return;
+		return reply;
 	}
 
 	req->log->info(req->log, "Inserted sucessfully");
 
-	reply.code = REPLY_OK;
-	reply.cmd  = req->msg->cmd;
-	request_reply(req, &reply);
-	return;
+	reply->code = REPLY_OK;
+	reply->cmd  = req->msg->cmd;
+	return reply;
 }
 
-void operation_update(req_t * req, hashmap_t hashmap, lsn_t LSN) {
+proto_reply_t* operation_update(transaction_t * trans, hashmap_t hashmap) {
 	// TODO: do not forget to work with LSN when writing update
 	// I think it should not be a problem if we just copy-paste code from delete + insert as long as basicly it is exactly that
 	// But there might be some problems still
-	destroy_request(req);
+	destroy_request(trans->ancestor);
+	return NULL;
 }

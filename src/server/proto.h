@@ -21,9 +21,10 @@ enum proto_reply_code_t {
 };
 
 enum fgdb_code_t {
-	CODE_OK       = 0x0,
-	KEY_EXISTS    = 0x1,
-	KEY_NOT_FOUND = 0x2,
+	CODE_OK           = 0x0,
+	KEY_EXISTS        = 0x1,
+	KEY_NOT_FOUND     = 0x2,
+	OPERATION_UNKNOWN = 0x3,
 };
 
 typedef struct proto_reply_t {
