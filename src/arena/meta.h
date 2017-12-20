@@ -59,6 +59,11 @@ typedef struct arena {
 	arena_page_t * pages;
 } arena_t;
 
+typedef struct val_t {
+	uint16_t size;
+	char ptr[1];
+} val_t;
+
 arena_t * new_arena(size_t pages);
 void destroy_arena(arena_t * arena);
 arena_page_id_t arena_get_next_page(void);

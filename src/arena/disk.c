@@ -100,8 +100,11 @@ void disk_dump_page(page_id_t page_idx, arena_page_id_t arena_idx) {
 
 	lseek(disk->vfd, page_pos, SEEK_SET);
 	int bytes, to_write = PAGE_SIZE, written = 0;
+	arena_page_t * page = &arena->pages[arena_idx];
+
+	char * start = (char *) page;
 	while(to_write) {
-		bytes = write(disk->vfd, &arena->pages[arena_idx] + written, to_write);
+		bytes = write(disk->vfd, start + written, to_write);
 		if (-1 == bytes) {
 			if (errno == EAGAIN || errno == EINTR) {
 			} else {

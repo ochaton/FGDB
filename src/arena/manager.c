@@ -37,8 +37,8 @@ void snapshot(void) {
 	for (page_id_t page_id = 0; page_id < arena->headers->total; page_id++) {
 		page_header_t * header = VECTOR_GET(arena->headers[0], page_header_t *, page_id);
 
+		arena_defragmentate_page(header->arena_id, header);
 		if (header->state == PAGE_DIRTY) {
-			arena_defragmentate_page(header->arena_id, header);
 			disk_dump_page(header->page_id, header->arena_id);
 		}
 	}
@@ -78,6 +78,7 @@ page_header_t * headers_new_page(void) {
 	header->state      = PAGE_DIRTY;
 	header->page_id    = arena->headers->total;
 	header->arena_id   = arena_get_next_page();
+	header->pLSN       = 0;
 
 	header->keys = malloc(sizeof(struct vector));
 	vector_init(header->keys, PAGE_HEADER_KEYS_INIT_COUNT);
