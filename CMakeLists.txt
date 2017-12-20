@@ -38,7 +38,7 @@ set(memory_sources
 	src/memory/hashmap.c)
 
 set(operation_sources
-	src/operations.c)
+	src/operations/operations.c)
 
 set(util_sources
 	src/util.c)

@@ -41,10 +41,10 @@ void setUp() {
 }
 
 void tearDown() {
-	hashmap_delete(hashmap);
 	destroy_headers();
 	destroy_arena(arena);
 	destroy_lru_queue(lru);
+	hashmap_delete(hashmap);
 	destroy_disk(disk);
 
 	buddy_destroy();
@@ -75,17 +75,20 @@ void test1(void) {
 
 	/* 3. Allocate page for value */
 
-	key_meta_t key_meta = { -1, -1 };
-	page_header_t * header = page_value_set(insert_val, &key_meta);
+	key_meta_t * key_meta = (key_meta_t *) malloc(sizeof(key_meta_t));
+	key_meta->weak_key = insert_key;
+	key_meta->header_key_id = -1;
+	key_meta->page = -1;
+	page_header_t * header = page_value_set(insert_val, key_meta);
 
 	TEST_ASSERT_NOT_NULL(header);
-	TEST_ASSERT_MESSAGE(key_meta.header_key_id == 0, "First key should be the zero one inside header");
-	TEST_ASSERT_MESSAGE(key_meta.page == 0, "First key should be inserted into 0-page");
+	TEST_ASSERT_MESSAGE(key_meta->header_key_id == 0, "First key should be the zero one inside header");
+	TEST_ASSERT_MESSAGE(key_meta->page == 0, "First key should be inserted into 0-page");
 
 	/* 4. Insert key into hashmap */
 
 	hashmap_error_t err;
-	int result = hashmap_insert_key(hashmap, &key_meta, insert_key, &err);
+	int result = hashmap_insert_key(hashmap, key_meta, insert_key, &err);
 	TEST_ASSERT_MESSAGE(result == 0, "Key must be inserted into hashmap with status 0");
 	TEST_ASSERT_MESSAGE(err == HASHMAP_SUCCESS, "Key must be inserted into hashmap with HASHMAP_SUCCESS");
 

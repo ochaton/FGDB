@@ -52,7 +52,11 @@ void destroy_header(page_header_t * header) {
 
 	// Destroy reverse keys:
 	for (size_t i = 0; i < header->keys->total; i++) {
-		free(header->keys->items[i]);
+		page_header_key_t * key = VECTOR_GET(header->keys[0], page_header_key_t *, i);
+		if (key->key_meta_ptr) {
+			free(key->key_meta_ptr);
+		}
+		free(key);
 	}
 
 	vector_free(header->keys);
@@ -227,34 +231,3 @@ static arena_page_id_t heat_page(page_id_t page_id) {
 	lru_touch_page(lru, header);
 	return arena_page_id;
 }
-
-// static page_id_t page_value_alloc(size_t bytes) {
-// 	assert(bytes < PAGE_SIZE);
-
-// 	for (int32_t page_id = 0; page_id < arena->headers->len; page_id++) {
-// 		page_header_t * header = &arena->headers->items[page_id];
-
-// 		if (header->tail_bytes >= bytes) {
-// 			if (header->location == PAGE_INMEMORY) {
-// 				return page_id;
-// 			}
-
-// 			if (header->location == PAGE_INDISK) {
-// 				header->arena_id = heat_page(page_id);
-// 				header->location = PAGE_INMEMORY;
-// 				return page_id;
-// 			}
-// 		}
-
-// 		if (header->location == PAGE_FREE) {
-// 			page_id_t arena_page_id = arena_get_next_page(arena);
-// 			disk_new_page(disk);
-// 			header->arena_id = arena_page_id;
-// 			header->location = PAGE_INMEMORY;
-
-// 			return page_id;
-// 		}
-// 	}
-
-// 	// Call defragmentator:
-// }
