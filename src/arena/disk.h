@@ -25,17 +25,6 @@ typedef struct disk {
 #include "common.h"
 #include "memory/hashmap.h"
 #include "lib/hashmap/AVLNode.h"
-
-typedef struct binary_key_t {
-	size_t length;
-	page_id_t page_id;
-	uint16_t offset;
-	struct {
-		uint16_t size;
-		char ptr[1];
-	} key;
-} __attribute__ ((__packed__)) binary_key_t;
-
 #include "config.h"
 
 disk_t * init_disk(config_t * config);

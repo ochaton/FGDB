@@ -143,8 +143,12 @@ int db_start(int argc, char const *argv[]) {
 	config.arena.size = 1024;
 
 	disk = init_disk(&config);
-	arena->headers = init_headers(disk->nkeys);
+	arena->headers = init_headers(0);
 	hashmap = hashmap_new();
+
+	for (page_id_t page_id = 0; page_id < disk->pages; page_id++) {
+		headers_new_page();
+	}
 
 	uint64_t keys;
 	for (keys = 0; keys < disk->nkeys; ++keys) {

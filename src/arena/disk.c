@@ -167,22 +167,21 @@ int disk_upload_key(disk_t * disk, hashmap_key_t * ret) {
 		return -1;
 	}
 
-	length -= sizeof(length);
-
-	binary_key_t * record = malloc(length);
-	record->length = length;
-
-	read(disk->kfd, record + sizeof(record->length), record->length);
-
 	ret->key = (str_t *) malloc(sizeof(str_t));
-	ret->key->size = record->key.size;
+
+	char * buffer;
+	char * p = buffer = (char *) malloc(length);
+
+	read(disk->kfd, buffer, length);
+
+	memcpy(&ret->page_id, p, sizeof(ret->page_id));     p += sizeof(ret->page_id);
+	memcpy(&ret->offset, p, sizeof(ret->offset));       p += sizeof(ret->offset);
+	memcpy(&ret->key->size, p, sizeof(ret->key->size)); p += sizeof(ret->key->size);
+
 	ret->key->ptr = (char *) malloc(ret->key->size);
+	memcpy(ret->key->ptr, p, ret->key->size);
 
-	memcpy(ret->key->ptr, &record->key.ptr[0], record->key.size);
-	ret->offset = record->offset;
-	ret->page_id = record->page_id;
-
-	free(record);
+	free(buffer);
 	return 0;
 }
 
