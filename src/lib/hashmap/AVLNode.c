@@ -12,16 +12,14 @@ static void __avl_LR_move(avlnode_ptr *node);
 static void __avl_RL_move(avlnode_ptr *node);
 
 
-int32_t avl_new_node(avlnode_ptr *new_node, str_t key, void *meta) {
+int32_t avl_new_node(avlnode_ptr *new_node, str_t * key, void *meta) {
 
     avlnode_ptr mid_node = (avlnode *) malloc(sizeof(avlnode));
     if (!mid_node) {
         return -1;
     }
     mid_node->hight = 1;
-    mid_node->key.ptr = (char *) malloc(key.size);
-    mid_node->key.size = key.size;
-    memcpy(mid_node->key.ptr, key.ptr, key.size);
+    mid_node->key = key;
     mid_node->meta = meta;
     mid_node->left = mid_node->right = mid_node->parent = NULL;
     *new_node = mid_node;
@@ -29,7 +27,7 @@ int32_t avl_new_node(avlnode_ptr *new_node, str_t key, void *meta) {
     return 1;
 }
 
-avlnode_ptr avl_search(avlnode_ptr node, str_t key) {
+avlnode_ptr avl_search(avlnode_ptr node, str_t * key) {
     if (!node) {
         return NULL;
     }
@@ -75,31 +73,32 @@ int32_t avl_insert_node(avlnode_ptr *node, avlnode_ptr node_new) {
     return 1;
 }
 
-int32_t avl_delete_node(avlnode_ptr *node) {
-    if (!(*node)) {
+int32_t avl_delete_node(avlnode_ptr * pnode) {
+    avlnode_ptr node = *pnode;
+    if (!node) {
         return 1;
     }
-    if ((*node)->key.ptr) {
-        free((*node)->key.ptr);
-        (*node)->key.ptr = NULL;
+    if (node->key) {
+        destroy_string(node->key);
+        node->key = NULL;
     }
-    free(*node);
-    *node = NULL;
+    free(node);
+    *pnode = NULL;
     return 1;
 }
 
 // here we can delete meta
-int32_t avl_remove_node(avlnode_ptr *node, avlnode_ptr node_new) {
+int32_t avl_remove_node(avlnode_ptr *node, str_t * key) {
 
     if (!(*node)) {
         return -1;
     }
-    if (key_comp((*node)->key, node_new->key) > 0) {
+    if (key_comp((*node)->key, key) > 0) {
         avlnode_ptr mid = (*node)->right;
-        avl_remove_node(&mid, node_new);
-    } else if (key_comp((*node)->key, node_new->key) < 0) {
+        avl_remove_node(&mid, key);
+    } else if (key_comp((*node)->key, key) < 0) {
         avlnode_ptr mid = (*node)->left;
-        avl_remove_node(&mid, node_new);
+        avl_remove_node(&mid, key);
     } else {
         if (!(*node)->left && !(*node)->right) {
             avlnode_ptr last = (*node)->parent;
@@ -112,14 +111,13 @@ int32_t avl_remove_node(avlnode_ptr *node, avlnode_ptr node_new) {
             }
             avl_calc_hight(last);
             avl_delete_node(node);
-            *node = NULL;
         } else if ((*node)->left && (*node)->right) {
             avlnode_ptr mid1 = *node, mid2;
             mid1 = mid1->left;
             while (mid1->right) {
                 mid1 = mid1->right;
             }
-            str_t kkey = (*node)->key;
+            str_t * kkey = (*node)->key;
             (*node)->key = mid1->key;
             mid1->key = kkey;
 
@@ -152,7 +150,7 @@ int32_t avl_remove_node(avlnode_ptr *node, avlnode_ptr node_new) {
         } else if ((*node)->left) {
             avlnode_ptr mid1 = (*node)->left;
 
-            str_t kkey = (*node)->key;
+            str_t * kkey = (*node)->key;
             (*node)->key = mid1->key;
             mid1->key = kkey;
 
@@ -175,7 +173,7 @@ int32_t avl_remove_node(avlnode_ptr *node, avlnode_ptr node_new) {
 
         } else if ((*node)->right) {
             avlnode_ptr mid1 = (*node)->right;
-            str_t kkey = (*node)->key;
+            str_t * kkey = (*node)->key;
             (*node)->key = mid1->key;
             mid1->key = kkey;
             void * mmeta = (*node)->meta;

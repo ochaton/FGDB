@@ -8,20 +8,16 @@ int32_t hash_new_node(hm_node_ptr *node, uint32_t dep) {
     if (!node) {
         return -1;
     }
-    hm_node_ptr new_node = (hm_node*) malloc(sizeof(hm_node));
+    hm_node_ptr new_node = (hm_node*) calloc(1, sizeof(hm_node));
     if (!new_node) {
         return -1;
-    }
-    for (int32_t i = 0; i < MAX_HASH_NODE; i++) {
-        new_node->top[i] = NULL;
-        new_node->len_of_list[i] = 0;
     }
     new_node->dep = dep;
     *node = new_node;
     return 0;
 }
 
-avlnode_ptr hash_search(hm_node_ptr node, str_t key) {
+avlnode_ptr hash_search(hm_node_ptr node, str_t * key) {
     if (!node) {
         return NULL;
     }
@@ -38,7 +34,7 @@ avlnode_ptr hash_search(hm_node_ptr node, str_t key) {
     }
 }
 
-int32_t hash_insert(hm_node_ptr node, str_t key, void *meta) {
+int32_t hash_insert(hm_node_ptr node, str_t * key, void *meta) {
     if (!node) {
         return -1;
     }
@@ -49,7 +45,9 @@ int32_t hash_insert(hm_node_ptr node, str_t key, void *meta) {
     }
 
     avlnode_ptr new_avl_node;
-    avl_new_node(&new_avl_node, key, meta);
+    if (-1 == avl_new_node(&new_avl_node, key, meta)) {
+        return -1;
+    }
     if (!node->top[mid_key]) {
         node->top[mid_key] = new_avl_node;
         node->len_of_list[mid_key]++;
@@ -64,20 +62,15 @@ int32_t hash_insert(hm_node_ptr node, str_t key, void *meta) {
     return 1;
 }
 
-int32_t hash_delete(hm_node_ptr node, str_t key) {
+int32_t hash_delete(hm_node_ptr node, str_t * key) {
     if (!node) {
         return 0;
     }
     uint32_t mid_key = hash(key, node->dep);
     while (1) {
         if (node->len_of_list[mid_key] < MAX_HASH_DEP) {
-            avlnode_ptr new_avl_node;
-            avl_new_node(&new_avl_node, key, NULL);
             avlnode_ptr mid_node = node->top[mid_key];
-            int32_t stat = avl_remove_node(&mid_node, new_avl_node);
-            if (new_avl_node) {
-                avl_erase(new_avl_node);
-            }
+            int32_t stat = avl_remove_node(&mid_node, key);
             node->top[mid_key] = mid_node;
             if (stat == 1) {
                 node->len_of_list[mid_key]--;
@@ -98,12 +91,10 @@ int32_t hash_erase(hm_node_ptr node) {
     for (uint32_t i = 0; i < MAX_HASH_NODE; i++) {
         if (node->len_of_list[i] > MAX_HASH_DEP) {
             hash_erase(node->top[i]);
-            //free((*node)->top[i]);
         } else {
             if (node->len_of_list[i] > 0) {
                 avl_erase(node->top[i]);
             }
-
         }
     }
     if (node) {

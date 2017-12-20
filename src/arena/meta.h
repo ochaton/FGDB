@@ -1,6 +1,17 @@
 #ifndef FGDB_META_PAGES_H
 #define FGDB_META_PAGES_H
 
+struct key_meta_t;
+struct page_header_key_t;
+struct page_header;
+
+typedef struct key_meta_t key_meta_t;
+typedef struct page_header_key_t page_header_key_t;
+typedef struct page_header page_header_t;
+
+enum { PAGE_SIZE = 4096 };
+typedef char arena_page_t[PAGE_SIZE];
+
 #include <stddef.h>
 #include <stdint.h>
 
@@ -40,9 +51,6 @@ typedef struct page_header {
 	enum { PAGE_FREE, PAGE_INMEMORY, PAGE_INDISK } location:8;
 } page_header_t;
 
-enum { PAGE_SIZE = 4096 };
-typedef char arena_page_t[PAGE_SIZE];
-
 typedef struct vector page_headers_vector_t;
 
 typedef struct arena {
@@ -56,8 +64,6 @@ arena_t * new_arena(size_t pages);
 void destroy_arena(arena_t * arena);
 arena_page_id_t arena_get_next_page(void);
 void arena_defragmentate_page(arena_page_id_t page_id, page_header_t * header);
-
-typedef struct key_meta_t key_meta_t;
 
 page_headers_vector_t * init_headers(size_t pages);
 void destroy_headers(void);

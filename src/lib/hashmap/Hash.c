@@ -2,7 +2,7 @@
 // PVS-Studio Static Code Analyzer for C, C++ and C#: http://www.viva64.com
 #include "HashMap.h"
 
-uint32_t hash (str_t key,int dep) {
+uint32_t hash (str_t * key, int dep) {
     // `dep` changes constant in hashf
     // TODO: assert if one of p's is common-prime with MAX_HASH_NODE
     uint32_t mid = 0, p, m;
@@ -13,8 +13,8 @@ uint32_t hash (str_t key,int dep) {
         case 4: p = 107; m = MAX_HASH_NODE; break;
         default: p = 89; m = MAX_HASH_NODE; break;
     }
-    for (uint32_t i = 0; i < key.size; i++){
-        mid = mid + p * key.ptr[i] % m;
+    for (uint32_t i = 0; i < key->size; i++){
+        mid = mid + p * key->ptr[i] % m;
         mid %= m;
     }
     return mid;

@@ -27,18 +27,22 @@ set(disk_sources
 set(memory_sources
 	../src/memory/hashmap.c)
 
+set(util_sources
+	../src/util.c)
+
 add_library(arena STATIC ${arena_sources})
+add_library(util STATIC ${util_sources})
 add_library(disk STATIC ${disk_sources})
 add_library(memory STATIC ${memory_sources})
 
 add_executable(fgdb_test_exe fgdb.c)
-target_link_libraries(fgdb_test_exe arena memory disk buddy vector lruq wal unity HashMap transaction_queue)
+target_link_libraries(fgdb_test_exe arena memory disk buddy vector lruq wal unity HashMap transaction_queue util)
 
 add_executable(hashmap_test_exe hashmap/main.c)
-target_link_libraries(hashmap_test_exe HashMap unity)
+target_link_libraries(hashmap_test_exe HashMap unity util)
 
 add_executable(memory_test_exe memory/main.c)
-target_link_libraries(memory_test_exe memory HashMap unity)
+target_link_libraries(memory_test_exe memory HashMap unity util)
 
 include(CTest)
 

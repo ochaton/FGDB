@@ -26,7 +26,15 @@ void setUp() {
 	buddy_new(8192); // 8Mb
 	lru = new_lru_queue();
 	arena = new_arena(1024);
-	disk = init_disk("db.snap");
+
+	config_t config;
+	sprintf(config.disk.snap_dir, ".");
+	sprintf(config.disk.key_file, "key.key");
+	sprintf(config.wal.wal_dir, "wal");
+	config.arena.size = 1024;
+
+	disk = init_disk(&config);
+
 	arena->headers = init_headers(1024);
 	hashmap = hashmap_new(); // ????
 	unlink("log/0000000000000000000001.log");
@@ -59,17 +67,11 @@ void test1(void) {
 
 	/* 1. Memcopy key */
 
-	str_t * insert_key = (str_t *) malloc(sizeof(str_t));
-	insert_key->ptr = (char *) malloc(kv.key.size);
-	memcpy(insert_key->ptr, kv.key.ptr, kv.key.size);
-	insert_key->size = kv.key.size;
+	str_t * insert_key = string_copy(&kv.key);
 
 	/* 2. Memcopy value */
 
-	str_t * insert_val = (str_t *) malloc(sizeof(str_t));
-	insert_val->ptr = (char *) malloc(kv.val.size);
-	memcpy(insert_val->ptr, kv.val.ptr, kv.val.size);
-	insert_val->size = kv.val.size;
+	str_t * insert_val = string_copy(&kv.val);
 
 	/* 3. Allocate page for value */
 
@@ -89,10 +91,7 @@ void test1(void) {
 
 	/* 5. Free temporary memory */
 
-	free(insert_key->ptr);
-	free(insert_key);
-	free(insert_val->ptr);
-	free(insert_val);
+	destroy_string(insert_val);
 
 	/* 6. Select inserted key */
 

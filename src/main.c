@@ -139,11 +139,36 @@ int db_start(int argc, char const *argv[]) {
 	buddy_new(8192);
 	lru = new_lru_queue();
 	arena = new_arena(1024);
-	disk = init_disk("db.snap");
+
+	config_t config;
+	sprintf(config.disk.snap_dir, ".");
+	sprintf(config.disk.key_file, "key.key");
+	sprintf(config.wal.wal_dir, "wal");
+
+	config.arena.size = 1024;
+
+	disk = init_disk(&config);
+	arena->headers = init_headers(disk->nkeys);
+	hashmap = hashmap_new();
+
+	uint64_t keys;
+	for (keys = 0; keys < disk->nkeys; ++keys) {
+		hashmap_key_t key;
+		if (-1 == disk_upload_key(disk, &key)) {
+			break;
+		}
+
+		hashmap_error_t err;
+		if (-1 == hashmap_insert_key(hashmap, key.meta, key.key, &err)) {
+			fprintf(stderr, "Failed on inserting key: %s. (%s)\n", key.key->ptr, hashmap_error[err]);
+			exit(EXIT_FAILURE);
+		}
+	}
+
+	assert(keys == disk->nkeys);
+
 	// TODO: add some logic to start logger with actual LSNs
 	binary_logger = new_wal_logger(0, 0, 1);
-	arena->headers = init_headers(1024);
-	hashmap = hashmap_new();
 }
 
 int start_server() {

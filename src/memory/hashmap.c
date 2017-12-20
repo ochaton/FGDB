@@ -31,14 +31,14 @@ void hashmap_delete(hashmap_t hashmap) {
 
 int hashmap_insert_key(hashmap_t hmap, key_meta_t * key_meta, str_t * key, hashmap_error_t *err) {
 	*err = HASHMAP_SUCCESS;
-	avlnode_ptr found = hash_search(hmap, *key);
+	avlnode_ptr found = hash_search(hmap, key);
 
 	if (found) {
 		*err = HASHMAP_KEY_FOUND;
 		return -1;
 	}
 
-	int result = hash_insert(hmap, *key, key_meta);
+	int result = hash_insert(hmap, key, key_meta);
 	if (result != 1) {
 		*err = HASHMAP_INTERNAL_ERROR;
 		return -1;
@@ -49,7 +49,7 @@ int hashmap_insert_key(hashmap_t hmap, key_meta_t * key_meta, str_t * key, hashm
 
 key_meta_t * hashmap_lookup_key(hashmap_t hmap, str_t * key, hashmap_error_t *err) {
 	*err = HASHMAP_SUCCESS;
-	avlnode_ptr found = hash_search(hmap, *key);
+	avlnode_ptr found = hash_search(hmap, key);
 
 	if (found) {
 		key_meta_t * key_meta = found->meta;
@@ -61,7 +61,7 @@ key_meta_t * hashmap_lookup_key(hashmap_t hmap, str_t * key, hashmap_error_t *er
 
 key_meta_t * hashmap_delete_key(hashmap_t hmap, str_t * key, hashmap_error_t *err) {
 	*err = HASHMAP_SUCCESS;
-	avlnode_ptr found = hash_search(hmap, *key);
+	avlnode_ptr found = hash_search(hmap, key);
 
 	if (!found) {
 		return NULL;
@@ -73,7 +73,7 @@ key_meta_t * hashmap_delete_key(hashmap_t hmap, str_t * key, hashmap_error_t *er
 	rv->header_key_id = key_meta->header_key_id;
 	rv->page = key_meta->page;
 
-	int result = hash_delete(hmap, *key);
+	int result = hash_delete(hmap, key);
 	assert(result == 1);
 
 	return rv;

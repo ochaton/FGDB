@@ -40,13 +40,17 @@ set(memory_sources
 set(operation_sources
 	src/operations.c)
 
+set(util_sources
+	src/util.c)
+
 add_library(arena STATIC ${arena_sources})
 add_library(disk STATIC ${disk_sources})
 add_library(memory STATIC ${memory_sources})
 add_library(operations STATIC ${operation_sources})
+add_library(util STATIC ${util_sources})
 
 add_executable(fgdb src/main.c)
-target_link_libraries(fgdb arena memory disk buddy vector lruq wal HashMap server operations transaction_queue pthread)
+target_link_libraries(fgdb arena memory disk buddy vector lruq wal HashMap server operations transaction_queue pthread util)
 
 # add_executable(queue_test test/queue_test.c)
 # target_link_libraries(queue_test transaction_queue request pthread)
