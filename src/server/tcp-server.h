@@ -22,6 +22,8 @@ struct ev_server {
 		struct sockaddr_in socket_in;
 		struct sockaddr_un socket_un;
 	};
+	ev_async trigger;
+	struct ev_loop *loop;
 	void (*on_request)(req_t *);
 };
 

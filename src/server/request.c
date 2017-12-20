@@ -254,7 +254,6 @@ static int parse_data(req_t * req, msgpack_object * obj) {
 }
 
 void request_reply(req_t * req, proto_reply_t * reply) {
-
 	/* REWRITE THIS! Proxy buffer to msgpack_packer! */
 
 	msgpack_sbuffer * buf = serialize_reply(reply);
@@ -270,7 +269,8 @@ void request_reply(req_t * req, proto_reply_t * reply) {
 	req->state = WRITE;
 
 	ev_io_init(&req->io, write_reply, req->fd, EV_WRITE);
-	ev_io_start(EV_DEFAULT_ &req->io);
+	ev_io_start(req->server->loop, &req->io);
+	ev_async_send(req->server->loop, &req->server->trigger);
 	free(buf);
 }
 
