@@ -139,7 +139,7 @@ static int rfd = -1;
 
 unsigned int staff_random() {
 	if (rfd == -1) {
-		if (-1 == (rfd = open("/dev/random", O_RDONLY))) {
+		if (-1 == (rfd = open("/dev/urandom", O_RDONLY))) {
 			fprintf(stderr, "Openning /dev/random failed: %s\n", strerror(errno));
 			return rand();
 		}

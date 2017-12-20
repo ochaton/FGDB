@@ -73,12 +73,7 @@ void on_request (req_t *req) {
 	}
 }
 
-static void idle_cb(EV_P_ ev_periodic *w, int revents) {
-	// fprintf(stderr, "Not blocked\n");
-}
-
 void * transaction_queue_worker (void * args) {
-
 	pthread_detach(pthread_self());
 	ignore_sigpipe();
 
@@ -146,16 +141,19 @@ int db_start(int argc, char const *argv[]) {
 	hashmap = hashmap_new();
 }
 
+static void async_cb (EV_P_ ev_async *w, int revents) {
+	// just used for the side effects
+}
+
 int start_server() {
 	struct ev_loop *loop = ev_default_loop(0);
 
-	struct ev_periodic every_few_seconds;
-	ev_periodic_init(&every_few_seconds, idle_cb, 0, 0.01, 0);
-	ev_periodic_start(EV_A_ &every_few_seconds);
 
 	ev_server server = server_init("0.0.0.0", 2016, INET);
 	server.on_request = on_request;
 	server_listen(loop, &server);
+	ev_async_init(&server.trigger, async_cb);
+	ev_async_start(loop, &server.trigger);
 	ev_loop(loop, 0);
 
 	// This point is only ever reached if the loop is manually exited

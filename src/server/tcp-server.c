@@ -39,7 +39,6 @@ static void accept_cb (EV_P_ ev_io *w, int revents) {
 }
 
 ev_server server_init(char * ip_addr, uint16_t port, enum socket_type sock_type) {
-
 	ev_server new_server;
 	new_server.type = sock_type;
 
@@ -50,6 +49,7 @@ ev_server server_init(char * ip_addr, uint16_t port, enum socket_type sock_type)
 }
 
 void server_listen (struct ev_loop *loop, ev_server * server) {
+	server->loop = loop;
 	ev_io_start(loop, &server->io);
 	return;
 }
