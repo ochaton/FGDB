@@ -157,7 +157,9 @@ void binary_logs_writing_test(void) {
 	transaction_t t2 = { NULL, &m2 };
 	write_log(l, &t2);
 	wal_unlogger_t* u = new_unlogger("log/0000000000000000000001.log");
+	lsn_t lastLSN = get_latest_log_LSN(u);
 	transaction_t* rt = recover_transaction(u);
+	TEST_ASSERT_MESSAGE(lastLSN == 2, "Last logged LSN is correct");
 	TEST_ASSERT_EQUAL_STRING_LEN("key", rt->msg->key.ptr, rt->msg->key.size);
 	TEST_ASSERT_EQUAL_STRING_LEN("value", rt->msg->val.ptr, rt->msg->val.size);
 	TEST_ASSERT_MESSAGE(rt->msg->cmd == INSERT, "OPERATIONS are the same 1");
