@@ -71,6 +71,8 @@ wal_unlogger_t* new_unlogger(char* path);
 
 transaction_t* recover_transaction(wal_unlogger_t* u);
 
+lsn_t get_latest_log_LSN(wal_unlogger_t* u);
+
 void destroy_wal_unlogger(wal_unlogger_t* u);
 
 #endif
