@@ -173,6 +173,6 @@ proto_reply_t* operation_update(transaction_t * trans) {
 	// TODO: do not forget to work with LSN when writing update
 	// I think it should not be a problem if we just copy-paste code from delete + insert as long as basicly it is exactly that
 	// But there might be some problems still
-	destroy_request(trans->ancestor);
+	// destroy_request(trans->ancestor);
 	return NULL;
 }

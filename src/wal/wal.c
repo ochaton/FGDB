@@ -2,6 +2,7 @@
 #include <string.h>
 
 #include  "wal/wal.h"
+#include "server/log.h"
 
 wal_logger_t* new_wal_logger(lsn_t LSN) {
 	wal_logger_t* w = malloc(sizeof(wal_logger_t));

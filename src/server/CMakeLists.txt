@@ -60,11 +60,12 @@ set(server_sources
 
 set(log_sources
 	log.c
+	staff.c
 	)
 
 add_library(server STATIC ${server_sources})
 add_library(request STATIC ${request_sources})
-add_library(log STATIC ${server_sources})
+add_library(log STATIC ${log_sources})
 add_library(message STATIC ${message_sources})
 
 target_link_libraries(request

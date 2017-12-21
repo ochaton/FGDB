@@ -22,6 +22,7 @@ arena_t   * arena;
 disk_t    * disk;
 lru_queue_t * lru;
 hashmap_t hashmap;
+wal_logger_t * wal_logger;
 
 void setUp() {
 	buddy_new(8192); // 8Mb
