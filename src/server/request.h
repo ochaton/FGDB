@@ -4,9 +4,9 @@
 struct request;
 typedef struct request req_t;
 
-#include "server/log.h"
+#include "lib/log/log.h"
 #include "server/tcp-server.h"
-#include "server/message.h"
+#include "message/message.h"
 #include "server/buffer.h"
 #include "server/proto.h"
 

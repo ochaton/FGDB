@@ -5,7 +5,7 @@ struct transaction_t;
 typedef struct transaction_t transaction_t;
 
 #include "common.h"
-#include "server/message.h"
+#include "message/message.h"
 #include "server/request.h"
 #include "lib/heap/heap.h"
 

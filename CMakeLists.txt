@@ -20,12 +20,20 @@ include_directories(src/)
 
 add_subdirectory(src/lib/buddy buddy)
 add_subdirectory(src/lib/vector vector)
-add_subdirectory(src/lru/ lruq)
-add_subdirectory(src/wal/ wal)
 add_subdirectory(src/lib/hashmap hashmap)
 
 add_subdirectory(src/server)
-add_subdirectory(src/transactions)
+
+add_subdirectory(src/lru/ lruq)
+add_subdirectory(src/wal/ wal)
+
+if (NOT TARGET transaction_queue)
+	add_subdirectory(src/transactions)
+endif()
+
+if (NOT TARGET operations)
+	add_subdirectory(src/operations operations)
+endif()
 
 set(arena_sources
 	src/arena/arena.c
@@ -34,19 +42,11 @@ set(arena_sources
 set(disk_sources
 	src/arena/disk.c)
 
-set(memory_sources
-	src/memory/hashmap.c)
-
-set(operation_sources
-	src/operations/operations.c)
-
 set(util_sources
 	src/util.c)
 
 add_library(arena STATIC ${arena_sources})
 add_library(disk STATIC ${disk_sources})
-add_library(memory STATIC ${memory_sources})
-add_library(operations STATIC ${operation_sources})
 add_library(util STATIC ${util_sources})
 
 add_executable(fgdb src/main.c)

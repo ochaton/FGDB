@@ -1,10 +1,8 @@
 #include "common.h"
-#include "server/request.h"
 #include "server/proto.h"
 
 #include "wal/wal.h"
 #include "memory/hashmap.h"
-#include "lib/buddy/memory.h"
 #include "arena/meta.h"
 
 #include <errno.h>

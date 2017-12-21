@@ -186,7 +186,7 @@ int db_start(int argc, char const *argv[]) {
 	assert(keys == disk->nkeys);
 
 	// TODO: add some logic to start logger with actual LSNs
-	wal_logger = new_wal_logger(0, 0, 1);
+	wal_logger = new_wal_logger(disk->lsn);
 }
 
 static void async_cb (EV_P_ ev_async *w, int revents) {

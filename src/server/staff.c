@@ -26,7 +26,6 @@ int inet_socket_init (struct sockaddr_in * socket_in, char * ip_addr_str, uint16
 int server_inet_init (struct ev_server * server, char * ip_addr_str, uint16_t port, int max_queue);
 
 int setnonblock (int fd);
-unsigned int staff_random();
 
 /* Implementation: */
 
@@ -133,23 +132,6 @@ int server_inet_init (struct ev_server * server, char * ip_addr_str, uint16_t po
 	}
 
 	return 0;
-}
-
-static int rfd = -1;
-
-unsigned int staff_random() {
-	if (rfd == -1) {
-		if (-1 == (rfd = open("/dev/urandom", O_RDONLY))) {
-			fprintf(stderr, "Openning /dev/random failed: %s\n", strerror(errno));
-			return rand();
-		}
-	}
-
-	unsigned int rv;
-	if (-1 == read(rfd, &rv, sizeof rv)) {
-		rv = rand();
-	}
-	return rv;
 }
 
 void hexdump(void * ptr, size_t bytes) {

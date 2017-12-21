@@ -15,8 +15,8 @@
 typedef uint64_t lsn_t;
 
 #include "common.h"
-#include "server/log.h"
-#include "server/message.h"
+#include "lib/log/log.h"
+#include "message/message.h"
 #include "transactions/queue.h"
 
 // TODO: raise flushedLSN when dumping page to disk

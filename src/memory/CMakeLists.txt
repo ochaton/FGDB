@@ -7,8 +7,4 @@ set(CMAKE_CXX_FLAGS "${CMAKE_C_FLAGS} -ggdb -Werror -Wignored-qualifiers -Winit-
 	-Wtype-limits -Wempty-body -Wmissing-field-initializers -Wextra \
 	-Wmissing-field-initializers -Wextra")
 
-set(memory_sources
-	hashmap.c
-	)
-
-add_library(memory STATIC ${memory_sources})
+add_library(memory STATIC hashmap.c)

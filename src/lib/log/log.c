@@ -6,8 +6,25 @@
 
 #include <stdarg.h>
 #include <string.h>
+#include <fcntl.h>
+#include <errno.h>
 
-#include "staff.h"
+static int rfd = -1;
+
+static unsigned int staff_random() {
+	if (rfd == -1) {
+		if (-1 == (rfd = open("/dev/urandom", O_RDONLY))) {
+			fprintf(stderr, "Openning /dev/random failed: %s\n", strerror(errno));
+			return rand();
+		}
+	}
+
+	unsigned int rv;
+	if (-1 == read(rfd, &rv, sizeof rv)) {
+		rv = rand();
+	}
+	return rv;
+}
 
 #define LOG_MESSAGE(LEVEL, REQID, FMT, args) do { \
 	char time_str[20]; \

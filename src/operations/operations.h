@@ -3,8 +3,6 @@
 
 #include "common.h"
 #include "server/proto.h"
-#include "lru/lruq.h"
-#include "memory/hashmap.h"
 #include "transactions/queue.h"
 
 proto_reply_t* operation_peek(transaction_t   * trans);

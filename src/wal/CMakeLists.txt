@@ -8,8 +8,22 @@ set(CMAKE_C_FLAGS "-O0 -ggdb -Werror -Wignored-qualifiers -Winit-self\
 	-Wtype-limits -Wempty-body -Wmissing-field-initializers -Wextra \
 	-Wmissing-field-initializers -Wextra")
 
-set(wal_sources
-	wal.c
-	)
+add_library(wal STATIC wal.c)
 
-add_library(wal STATIC ${wal_sources})
+if (NOT TARGET log)
+	add_subdirectory(../lib/log logger)
+endif()
+
+target_link_libraries(wal log)
+
+if (NOT TARGET transaction_queue)
+	add_subdirectory(../transactions transactions)
+endif()
+
+target_link_libraries(wal transaction_queue)
+
+if (NOT TARGET message)
+	add_subdirectory(../message message)
+endif()
+
+target_link_libraries(wal message)

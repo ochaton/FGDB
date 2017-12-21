@@ -15,7 +15,10 @@ set(queue_source
 if (NOT TARGET server)
 	add_subdirectory(../server server)
 endif()
-add_subdirectory(../lib/heap heap)
+
+if (NOT TARGET heap)
+	add_subdirectory(../lib/heap heap)
+endif()
 
 add_library(transaction_queue STATIC ${queue_source})
 target_link_libraries(transaction_queue heap pthread message)

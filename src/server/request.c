@@ -1,6 +1,6 @@
 #include "request.h"
 #include "staff.h"
-#include "log.h"
+#include "lib/log/log.h"
 #include "proto.h"
 
 #include <stdlib.h>

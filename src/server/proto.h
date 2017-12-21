@@ -6,7 +6,7 @@ typedef struct proto_reply_t proto_reply_t;
 
 #include <stdint.h>
 #include <msgpack.h>
-#include "message.h"
+#include "message/message.h"
 
 enum proto_reply_error_t {
 	PROTO_ERROR_UNKNOWN = 0x0,
