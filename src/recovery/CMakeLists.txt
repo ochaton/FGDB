@@ -8,8 +8,4 @@ set(CMAKE_C_FLAGS "-O0 -ggdb -Werror -Wignored-qualifiers -Winit-self\
 	-Wtype-limits -Wempty-body -Wmissing-field-initializers -Wextra \
 	-Wmissing-field-initializers -Wextra")
 
-set(recovery_sources
-	recovery.c
-	)
-
-add_library(recovery STATIC ${recovery_sources})
+add_library(recovery STATIC recovery.c)

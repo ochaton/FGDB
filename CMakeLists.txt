@@ -27,6 +27,8 @@ add_subdirectory(src/server)
 add_subdirectory(src/lru/ lruq)
 add_subdirectory(src/wal/ wal)
 
+add_subdirectory(src/recovery/ recovery)
+
 if (NOT TARGET transaction_queue)
 	add_subdirectory(src/transactions)
 endif()
@@ -50,11 +52,8 @@ add_library(disk STATIC ${disk_sources})
 add_library(util STATIC ${util_sources})
 
 add_executable(fgdb src/main.c)
-target_link_libraries(fgdb arena memory disk buddy vector lruq wal HashMap server operations transaction_queue pthread util)
+target_link_libraries(fgdb arena memory disk buddy vector lruq wal HashMap server operations transaction_queue pthread util recovery)
 
-# add_executable(queue_test test/queue_test.c)
-# target_link_libraries(queue_test transaction_queue request pthread)
+include(CTest)
 
-# enable_testing()
-# add_test(NAME perl_test_server
-# 	COMMAND make -C "${CMAKE_CURRENT_SOURCE_DIR}/client")
+add_subdirectory(test)

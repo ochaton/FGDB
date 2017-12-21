@@ -13,7 +13,7 @@
 #include "arena/meta.h"
 #include "lru/lruq.h"
 #include "wal/wal.h"
-#include "server/message.h"
+#include "message/message.h"
 #include "recovery/recovery.h"
 
 #include "unity.h"
