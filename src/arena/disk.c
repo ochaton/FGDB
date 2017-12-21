@@ -30,7 +30,7 @@ disk_t * init_disk(config_t * config) {
 	snprintf(keypath, sizeof(keypath), "%s/%s", config->disk.snap_dir, config->disk.key_file);
 
 	size_t keypath_len = strlen(keypath);
-	disk->keypath = (char *) malloc(keypath_len);
+	disk->keypath = (char *) calloc(keypath_len + 1, sizeof(char));
 	memcpy(disk->keypath, keypath, keypath_len);
 
 	if (-1 == (disk->kfd = open(keypath, O_RDWR | O_CREAT, 0644))) {
@@ -102,8 +102,6 @@ void disk_upload_page(disk_t *disk, page_id_t disk_page_idx, arena_page_id_t are
 void disk_dump_page(page_id_t page_idx, arena_page_id_t arena_idx) {
 	off_t page_pos = disk->arena_start + page_idx * PAGE_SIZE;
 
-	fprintf(stderr, "Dump page called for %d/%d\n", page_idx, arena_idx);
-
 	page_header_t * header = VECTOR_GET(arena->headers[0], page_header_t*, page_idx);
 	disk->lsn = max(disk->lsn, header->pLSN);
 
@@ -147,8 +145,6 @@ int disk_dump_keys(disk_t * disk) {
 
 		bytes += write(disk->kfd, &header->offset_bytes, sizeof(header->offset_bytes));
 		bytes += write(disk->kfd, &keys_total, sizeof(keys_total));
-
-		fprintf(stderr, "Dumping page_header = %d (%d/%d)\n", page_id, keys_total, header->offset_bytes);
 
 		for (size_t key_id = 0; key_id < header->keys->total; key_id++) {
 			page_header_key_t * page_key = VECTOR_GET(header->keys[0], page_header_key_t*, key_id);

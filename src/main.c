@@ -129,7 +129,6 @@ void * transaction_queue_worker (void * args) {
 		request_reply(trans->ancestor, db_reply);
 		free(db_reply);
 	}
-
 }
 
 int db_start(int argc, char const *argv[]) {
@@ -188,7 +187,7 @@ int db_start(int argc, char const *argv[]) {
 				fprintf(stderr, "Failed on inserting key: %s. (%s)\n", key.key->ptr, hashmap_error[err]);
 				exit(EXIT_FAILURE);
 			} else {
-				fprintf(stderr, "Successfully inserted %s\n", key.key->ptr);
+				// fprintf(stderr, "Successfully inserted %s\n", key.key->ptr);
 			}
 		}
 	}
@@ -231,7 +230,7 @@ void shutdown_handler(int signum) {
 }
 
 void snapshot_handler(int signum) {
-	fprintf(stderr, "Snapshot creating...");
+	fprintf(stderr, "Snapshot creating...\n");
 	snapshot();
 	fprintf(stderr, "Snapshot done\n");
 }
