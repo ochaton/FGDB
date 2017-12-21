@@ -38,7 +38,7 @@ void setUp() {
 	disk = init_disk(&config);
 
 	arena->headers = init_headers(1024);
-	hashmap = hashmap_new(); // ????
+	assert(hashmap_new(&hashmap)); // ????
 	unlink("log/0000000000000000000001.log");
 }
 

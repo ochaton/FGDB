@@ -30,7 +30,7 @@ typedef struct hashmap_key_t {
 	page_id_t page_id;
 } hashmap_key_t;
 
-hashmap_t hashmap_new(void);
+hashmap_t hashmap_new(hashmap_t * hmptr);
 void hashmap_delete(hashmap_t hashmap);
 
 typedef enum {

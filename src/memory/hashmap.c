@@ -8,7 +8,7 @@
 #include <string.h>
 #include <assert.h>
 
-hashmap_t hashmap_new(void);
+hashmap_t hashmap_new(hashmap_t * hmptr);
 void hashmap_delete(hashmap_t hashmap);
 
 int hashmap_insert_key(hashmap_t hmap, key_meta_t * key_meta, str_t * key, hashmap_error_t *err);
@@ -20,9 +20,10 @@ void hashmap_delete(hashmap_t hashmap);
 
 extern hashmap_t hashmap;
 
-hashmap_t hashmap_new(void) {
-	assert(hash_new_node(&hashmap, 0) == 0);
-	return hashmap;
+hashmap_t hashmap_new(hashmap_t * hmptr) {
+	int res = hash_new_node(hmptr, 0);
+	assert(res == 0);
+	return *hmptr;
 }
 
 void hashmap_delete(hashmap_t h) {

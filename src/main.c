@@ -144,7 +144,7 @@ int db_start(int argc, char const *argv[]) {
 
 	disk = init_disk(&config);
 	arena->headers = init_headers(disk->pages);
-	hashmap = hashmap_new();
+	assert(hashmap_new(&hashmap));
 
 	for (page_id_t page_id = 0; page_id < disk->pages; page_id++) {
 		page_header_t * header = headers_new_page();

@@ -7,7 +7,7 @@
 hm_node_ptr hashmap;
 
 void setUp(void) {
-	hashmap = hashmap_new(); // ????
+	assert(hashmap_new(&hashmap)); // ????
 }
 
 void tearDown() {
