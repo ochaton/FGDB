@@ -3,6 +3,8 @@
 #ifndef AVLHASHMAP_H
 #define AVLHASHMAP_H
 
+typedef struct HashMap * hm_node_ptr;
+
 #include <stdint.h>
 #include <stdlib.h>
 #include "AVLNode.h"
@@ -11,8 +13,6 @@ enum {
     MAX_HASH_NODE = 20024,
     MAX_HASH_DEP = 10024,
 };
-
-typedef struct HashMap * hm_node_ptr;
 
 typedef struct HashMap  //create here hast table
 {

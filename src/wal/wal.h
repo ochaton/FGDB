@@ -15,6 +15,7 @@
 typedef uint64_t lsn_t;
 
 #include "common.h"
+#include "server/log.h"
 #include "server/message.h"
 #include "transactions/queue.h"
 
@@ -45,7 +46,12 @@ typedef struct {
 	int      file;
 } wal_unlogger_t;
 
-wal_logger_t* new_wal_logger(lsn_t LSN, lsn_t fLSN, uint32_t log_id);
+typedef struct {
+	transaction_t* transaction;
+	lsn_t          LSN;
+} recovery_t;
+
+wal_logger_t* new_wal_logger(lsn_t LSN);
 
 void dbg_str (str_t s);
 
@@ -69,10 +75,12 @@ void destroy_binary_record(binary_record_t* r);
 
 wal_unlogger_t* new_unlogger(char* path);
 
-transaction_t* recover_transaction(wal_unlogger_t* u);
+recovery_t* recover_transaction(wal_unlogger_t* u);
 
 lsn_t get_latest_log_LSN(wal_unlogger_t* u);
 
 void destroy_wal_unlogger(wal_unlogger_t* u);
+
+void destroy_recover(recovery_t* r);
 
 #endif

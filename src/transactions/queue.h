@@ -15,7 +15,8 @@ typedef struct transaction_t transaction_t;
 typedef struct request req_t;
 
 typedef struct transaction_t {
-	req_t* ancestor;
+	req_t*        ancestor;
+	struct log*   log;
 	struct msg_t* msg;
 } transaction_t;
 

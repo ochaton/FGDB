@@ -14,6 +14,7 @@
 #include "lru/lruq.h"
 #include "wal/wal.h"
 #include "server/message.h"
+#include "recovery/recovery.h"
 
 #include "unity.h"
 
@@ -121,7 +122,7 @@ void binary_structure_test(void) {
 		{ 5, "value" }
 	};
 	transaction_t     t = { NULL, &m };
-	wal_logger_t*     l = new_wal_logger(1234, 1230, 1);
+	wal_logger_t*     l = new_wal_logger(1234);
 	wal_log_record_t* r = to_wal_record(l, &t);
 	TEST_ASSERT_MESSAGE(r->LSN == 1235, "LSN must be old_LSN + 1");
 	binary_record_t*  b = to_binary(r);
@@ -145,8 +146,9 @@ void binary_logs_writing_test(void) {
 	};
 
 	transaction_t t = { NULL, &m };
-	wal_logger_t* l = new_wal_logger(0, 0, 1);
+	wal_logger_t* l = new_wal_logger(0);
 	write_log(l, &t);
+	fprintf(stderr, "OPA\n");
 
 	msg_t m2 = {
 		UPDATE,
@@ -156,7 +158,7 @@ void binary_logs_writing_test(void) {
 
 	transaction_t t2 = { NULL, &m2 };
 	write_log(l, &t2);
-	wal_unlogger_t* u = new_unlogger("log/0000000000000000000001.log");
+	wal_unlogger_t* u = new_unlogger("log/0000000000000000000000.log");
 	lsn_t lastLSN = get_latest_log_LSN(u);
 	transaction_t* rt = recover_transaction(u);
 	TEST_ASSERT_MESSAGE(lastLSN == 2, "Last logged LSN is correct");
@@ -181,5 +183,6 @@ int main(void) {
 	RUN_TEST(test1);
 	RUN_TEST(binary_structure_test);
 	RUN_TEST(binary_logs_writing_test);
+	wal_recovery(1);
 	return UNITY_END();
 }

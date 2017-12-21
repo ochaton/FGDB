@@ -34,6 +34,7 @@ str_t * char2string(const char *ptr, size_t bytes);
 extern struct arena *arena;
 extern struct disk  *disk;
 extern struct lru_queue_t  *lru;
+extern hm_node_ptr hashmap;
 
 struct FGBD_t;
 typedef struct FGDB_t FGDB_t;

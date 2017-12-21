@@ -14,6 +14,7 @@ transaction_t* convert_request(req_t* req) {
 		return NULL;
 	}
 	ret_trans->ancestor = req;
+	ret_trans->log = req->log;
 	ret_trans->msg = req->msg;
 	return ret_trans;
 }

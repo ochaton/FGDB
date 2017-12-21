@@ -13,8 +13,8 @@ typedef struct key_meta_t key_meta_t;
 typedef uint16_t page_header_key_id_t;
 typedef uint64_t page_id_t;
 
-#include "common.h"
 #include "lib/hashmap/HashMap.h"
+#include "common.h"
 
 typedef struct key_meta_t {
 	str_t * weak_key;

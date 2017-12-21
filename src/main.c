@@ -92,27 +92,27 @@ void * transaction_queue_worker (void * args) {
 		switch(trans->msg->cmd) {
 			case PEEK:
 			{
-				db_reply = operation_peek(trans, hashmap);
+				db_reply = operation_peek(trans);
 				break;
 			}
 			case SELECT:
 			{
-				db_reply = operation_select(trans, hashmap);
+				db_reply = operation_select(trans);
 				break;
 			}
 			case INSERT:
 			{
-				db_reply = operation_insert(trans, hashmap);
+				db_reply = operation_insert(trans);
 				break;
 			}
 			case DELETE:
 			{
-				db_reply = operation_delete(trans, hashmap);
+				db_reply = operation_delete(trans);
 				break;
 			}
 			case UPDATE:
 			{
-				db_reply = operation_update(trans, hashmap);
+				db_reply = operation_update(trans);
 				break;
 			}
 			default:

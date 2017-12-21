@@ -46,7 +46,6 @@ include_directories(${LIBEV_INCLUDE_DIR} ${MSGPACK_INCLUDE_DIR} ${CMAKE_CURRENT_
 set(request_sources
 	request.c
 	staff.c
-	log.c
 	proto.c
 	buffer.c
 	)
@@ -59,8 +58,13 @@ set(server_sources
 	tcp-server.c
 	)
 
+set(log_sources
+	log.c
+	)
+
 add_library(server STATIC ${server_sources})
 add_library(request STATIC ${request_sources})
+add_library(log STATIC ${server_sources})
 add_library(message STATIC ${message_sources})
 
 target_link_libraries(request

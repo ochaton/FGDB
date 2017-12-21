@@ -11,6 +11,9 @@ add_subdirectory(../src/lib/buddy buddy)
 add_subdirectory(../src/lib/vector vector)
 add_subdirectory(../src/lru/ lruq)
 add_subdirectory(../src/wal/ wal)
+add_subdirectory(../src/operations/ operations)
+add_subdirectory(../src/server/ server)
+add_subdirectory(../src/recovery/ recovery)
 add_subdirectory(../src/lib/hashmap hashmap)
 add_subdirectory(../src/transactions/ transactions)
 
@@ -36,7 +39,7 @@ add_library(disk STATIC ${disk_sources})
 add_library(memory STATIC ${memory_sources})
 
 add_executable(fgdb_test_exe fgdb.c)
-target_link_libraries(fgdb_test_exe arena memory disk buddy vector lruq wal unity HashMap transaction_queue util)
+target_link_libraries(fgdb_test_exe arena memory disk buddy vector lruq wal operations log recovery unity HashMap transaction_queue util)
 
 add_executable(hashmap_test_exe hashmap/main.c)
 target_link_libraries(hashmap_test_exe HashMap unity util)

@@ -3,12 +3,12 @@
 
 #include  "wal/wal.h"
 
-wal_logger_t* new_wal_logger(lsn_t LSN, lsn_t fLSN, uint32_t log_id) {
+wal_logger_t* new_wal_logger(lsn_t LSN) {
 	wal_logger_t* w = malloc(sizeof(wal_logger_t));
 
 	//creating new file for logs
 	char path[48];
-	sprintf(path, "log/%022i.log", log_id);
+	sprintf(path, "log/%022ld.log", LSN);
 
 	if (mkdir("log", 0777) == -1 && errno != EEXIST) {
 		fprintf(stderr, "Error in creating path: %s\n", strerror(errno));
@@ -21,7 +21,8 @@ wal_logger_t* new_wal_logger(lsn_t LSN, lsn_t fLSN, uint32_t log_id) {
 	}
 
 	w->LSN        = LSN;
-	w->flushedLSN = fLSN;
+	// it might change so let's keep it here
+	w->flushedLSN = LSN;
 
 	return w;
 }
@@ -213,7 +214,8 @@ lsn_t get_latest_log_LSN(wal_unlogger_t* u) {
 	return LSN;
 }
 
-transaction_t* recover_transaction(wal_unlogger_t* u) {
+recovery_t* recover_transaction(wal_unlogger_t* u) {
+	recovery_t*     recover = malloc(sizeof(recovery_t));
 	binary_record_t br;
 	if (-1 == read(u->file, &br.size, sizeof(br.size))) {
 		fprintf(stderr, "Error reading binary log (size): %s\n", strerror(errno));
@@ -222,9 +224,14 @@ transaction_t* recover_transaction(wal_unlogger_t* u) {
 
 	br.size -= sizeof(br.size);
 	br.ptr = (char *) malloc(br.size);
-	if (-1 == read(u->file, br.ptr, br.size)) {
+	ssize_t read_size = read(u->file, br.ptr, br.size);
+	if (-1 == read_size) {
 		fprintf(stderr, "Error reading binary log (record): %s\n", strerror(errno));
 		exit(errno);
+	} else if (0 == read_size) {
+		// no transactions left
+		free(br.ptr);
+		return NULL;
 	}
 
 	wal_log_record_t * wr = malloc(sizeof(wal_log_record_t));
@@ -235,6 +242,7 @@ transaction_t* recover_transaction(wal_unlogger_t* u) {
 
 	// NULL ancestor as long as we don't really have any
 	transaction_t* t = malloc(sizeof(transaction_t));
+	t->log = init_log();
 	t->ancestor = NULL;
 
 	t->msg = malloc(sizeof(msg_t));
@@ -250,14 +258,22 @@ transaction_t* recover_transaction(wal_unlogger_t* u) {
 
 	assert((uint64_t) p == (uint64_t) br.ptr + br.size); // WAL-log line was read completely
 
+	recover->LSN         = wr->LSN;
+	recover->transaction = t;
+
 	free(wr);
 	free(br.ptr);
 
-	return t;
+	return recover;
 }
 
 void destroy_wal_unlogger(wal_unlogger_t* u) {
 	close(u->file);
 	free(u);
 	return;
+}
+
+void destroy_recover(recovery_t* r) {
+	destroy_transaction(r->transaction);
+	free(r);
 }
