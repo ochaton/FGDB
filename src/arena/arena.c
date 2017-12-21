@@ -63,8 +63,10 @@ void arena_defragmentate_page(arena_page_id_t page_id, page_header_t * header) {
 	}
 
 	header->fragmentated_bytes = 0;
-	header->tail_bytes = offset;
+	header->offset_bytes = offset;
 
-	memset(start + header->tail_bytes, 0, PAGE_SIZE - header->tail_bytes);
+	fprintf(stderr, "After defragmentation %d off_t = %d\n", page_id, offset);
+
+	memset(start + offset, 0, PAGE_SIZE - header->offset_bytes);
 	header->state = PAGE_DIRTY;
 }

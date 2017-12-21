@@ -150,11 +150,12 @@ int db_start(int argc, char const *argv[]) {
 
 	size_t keys = 0;
 
+	fprintf(stderr, "Starting with %d\n", disk->nkeys);
+
 	for (page_id_t page_id = 0; page_id < disk->pages; page_id++) {
 		page_header_t * header = new_header();
 		header->state      = PAGE_CLEAN;
 		header->location   = PAGE_INDISK;
-		header->tail_bytes = PAGE_SIZE;
 		header->page_id    = page_id;
 		header->pLSN       = disk->lsn;
 
@@ -192,7 +193,7 @@ int db_start(int argc, char const *argv[]) {
 		}
 	}
 
-	assert(keys == disk->nkeys);
+	assert(keys >= disk->nkeys);
 
 	// TODO: add some logic to start logger with actual LSNs
 	wal_logger = new_wal_logger(0, 0, 1);

@@ -16,6 +16,8 @@ typedef struct disk {
 
 	uint64_t keys_dumped;
 
+	char *keypath;
+
 	lsn_t lsn;
 
 	int vfd;

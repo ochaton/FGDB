@@ -36,7 +36,7 @@ enum {
 typedef struct page_header {
 	uint64_t lsn;
 	uint16_t fragmentated_bytes;
-	uint16_t tail_bytes;
+	uint16_t offset_bytes;
 
 	struct vector *keys;
 	struct page_header *lru_next, *lru_prev;

@@ -25,8 +25,13 @@ disk_t * init_disk(config_t * config) {
 		exit(errno);
 	}
 
-	char keypath[2048];
+
+	char keypath[2048] = {};
 	snprintf(keypath, sizeof(keypath), "%s/%s", config->disk.snap_dir, config->disk.key_file);
+
+	size_t keypath_len = strlen(keypath);
+	disk->keypath = (char *) malloc(keypath_len);
+	memcpy(disk->keypath, keypath, keypath_len);
 
 	if (-1 == (disk->kfd = open(keypath, O_RDWR | O_CREAT, 0644))) {
 		fprintf(stderr, "Error while openning keys snapshot-file: %s\n", strerror(errno));
@@ -65,6 +70,8 @@ void destroy_disk(disk_t * disk) {
 	lseek(disk->vfd, 0, SEEK_SET);
 	write(disk->vfd, &disk->lsn, sizeof(disk->lsn));
 
+	free(disk->keypath);
+
 	close(disk->vfd);
 	close(disk->kfd);
 	free(disk);
@@ -94,6 +101,8 @@ void disk_upload_page(disk_t *disk, page_id_t disk_page_idx, arena_page_id_t are
 // TODO: do not forget about dumping pLSNs when we are dumping page headers
 void disk_dump_page(page_id_t page_idx, arena_page_id_t arena_idx) {
 	off_t page_pos = disk->arena_start + page_idx * PAGE_SIZE;
+
+	fprintf(stderr, "Dump page called for %d/%d\n", page_idx, arena_idx);
 
 	page_header_t * header = VECTOR_GET(arena->headers[0], page_header_t*, page_idx);
 	disk->lsn = max(disk->lsn, header->pLSN);
@@ -129,14 +138,17 @@ void disk_dump_page(page_id_t page_idx, arena_page_id_t arena_idx) {
 int disk_dump_keys(disk_t * disk) {
 
 	lseek(disk->kfd, disk->keys_start, SEEK_SET);
+	size_t bytes = disk->keys_start;
 
 	for (page_id_t page_id = 0; page_id < arena->headers->total; page_id++) {
 		page_header_t * header = VECTOR_GET(arena->headers[0], page_header_t*, page_id);
 
 		uint16_t keys_total = (uint16_t) header->keys->total;
 
-		write(disk->kfd, &header->tail_bytes, sizeof(header->tail_bytes));
-		write(disk->kfd, &keys_total, sizeof(keys_total));
+		bytes += write(disk->kfd, &header->offset_bytes, sizeof(header->offset_bytes));
+		bytes += write(disk->kfd, &keys_total, sizeof(keys_total));
+
+		fprintf(stderr, "Dumping page_header = %d (%d/%d)\n", page_id, keys_total, header->offset_bytes);
 
 		for (size_t key_id = 0; key_id < header->keys->total; key_id++) {
 			page_header_key_t * page_key = VECTOR_GET(header->keys[0], page_header_key_t*, key_id);
@@ -157,17 +169,19 @@ int disk_dump_keys(disk_t * disk) {
 			memcpy(p, meta->weak_key->ptr, meta->weak_key->size);           p += meta->weak_key->size;
 
 			length += sizeof(length);
-			write(disk->kfd, buffer, length);
+			bytes += write(disk->kfd, buffer, length);
 			free(buffer);
 
 			disk->keys_dumped++;
 		}
 	}
+
+	truncate(disk->keypath, bytes);
 }
 
 int disk_upload_header(disk_t * disk, page_header_t * header) {
 	uint16_t keys_total;
-	if (!read(disk->kfd, &header->tail_bytes, sizeof(header->tail_bytes))) {
+	if (!read(disk->kfd, &header->offset_bytes, sizeof(header->offset_bytes))) {
 		return -1;
 	}
 
