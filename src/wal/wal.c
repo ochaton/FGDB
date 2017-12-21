@@ -194,6 +194,9 @@ wal_unlogger_t* new_unlogger(char* path) {
 	return u;
 }
 
+// reads lsn_t from the start of the file
+// has a side effect of shifting seek in file
+// should be called 1 single time at the begining of recovery
 lsn_t get_latest_log_LSN(wal_unlogger_t* u) {
 	off_t current = lseek(u->file, 0, SEEK_CUR);
 	if (current == -1) {
