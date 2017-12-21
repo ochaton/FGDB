@@ -5,9 +5,10 @@
 #include <sys/un.h>
 #include <ev.h>
 
-#include "request.h"
+struct ev_server;
+typedef struct ev_server ev_server;
 
-typedef struct request req_t;
+#include "request.h"
 
 struct ev_server {
 	ev_io io;
@@ -21,10 +22,10 @@ struct ev_server {
 		struct sockaddr_in socket_in;
 		struct sockaddr_un socket_un;
 	};
+	ev_async trigger;
+	struct ev_loop *loop;
 	void (*on_request)(req_t *);
 };
-
-typedef struct ev_server ev_server;
 
 ev_server server_init(char * ip_addr, uint16_t port, enum socket_type sock_type);
 void server_listen (struct ev_loop *loop, ev_server * server);

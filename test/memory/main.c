@@ -16,7 +16,7 @@ void tearDown() {
 
 void test1() {
 	str_t key2insert = { 3, "key" };
-	// int hashmap_insert_key(hashmap_t hmap, key_meta_t * new_key, hashmap_error_t *err);
+
 	hashmap_error_t err;
 	page_id_t page = 0;
 
@@ -25,7 +25,7 @@ void test1() {
 		page
 	};
 
-	int result = hashmap_insert_key(hashmap, &key_meta, &key2insert, &err);
+	int result = hashmap_insert_key(hashmap, &key_meta, string_copy(&key2insert), &err);
 	TEST_ASSERT_MESSAGE(result == 0, "Must be 0");
 	TEST_ASSERT_MESSAGE(err == HASHMAP_SUCCESS, "Must be HASHMAP_SUCCESS");
 

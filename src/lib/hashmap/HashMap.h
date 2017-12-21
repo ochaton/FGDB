@@ -8,7 +8,7 @@
 #include "AVLNode.h"
 
 enum {
-    MAX_HASH_NODE = 10024,
+    MAX_HASH_NODE = 20024,
     MAX_HASH_DEP = 10024,
 };
 
@@ -23,15 +23,14 @@ typedef struct HashMap  //create here hast table
     void  *top[MAX_HASH_NODE];  //here is my ptr on list or on hash table
 } hm_node;
 
-int32_t hash (str_t key,int32_t dep);
+uint32_t hash (str_t * key,int32_t dep);
 
 int32_t hash_new_node(hm_node_ptr *node, uint32_t dep);
-avlnode_ptr hash_search(hm_node_ptr node, str_t key);
+avlnode_ptr hash_search(hm_node_ptr node, str_t * key);
 
-int32_t hash_insert(hm_node_ptr node, str_t key, void *meta);
-int32_t hash_delete(hm_node_ptr node, str_t key);
+int32_t hash_insert(hm_node_ptr node, str_t * key, void *meta);
+int32_t hash_delete(hm_node_ptr node, str_t * key);
 int32_t hash_erase(hm_node_ptr node);
-
 // Internal for tests
 int32_t __hash_remake(hm_node_ptr node, uint32_t index);
 int32_t __hash_insert_avl_in_hash(hm_node_ptr node, avlnode_ptr go);

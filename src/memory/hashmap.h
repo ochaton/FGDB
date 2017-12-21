@@ -1,17 +1,34 @@
 #ifndef HASHMAP_H
 #define HASHMAP_H
 
+struct hashmap_key_t;
+struct key_meta_t;
+
+typedef struct hashmap_key_t hashmap_key_t;
+typedef struct key_meta_t key_meta_t;
+
 #include <stddef.h>
 #include <stdint.h>
+
+typedef uint16_t page_header_key_id_t;
+typedef uint64_t page_id_t;
+
 #include "common.h"
 #include "lib/hashmap/HashMap.h"
 
 typedef struct key_meta_t {
+	str_t * weak_key;
 	page_header_key_id_t header_key_id;        /* Pointer to offset inside page (stored inside headers of arena-pages) */
 	page_id_t page;                            /* Page identificator. Storing this we can find the page, where stored value */
 } key_meta_t;
 
 typedef struct HashMap * hashmap_t;
+
+typedef struct hashmap_key_t {
+	str_t * key;
+	uint16_t offset;
+	page_id_t page_id;
+} hashmap_key_t;
 
 hashmap_t hashmap_new(void);
 void hashmap_delete(hashmap_t hashmap);

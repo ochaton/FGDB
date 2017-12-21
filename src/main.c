@@ -28,21 +28,18 @@
 #include "lib/buddy/memory.h"
 #include "memory/hashmap.h"
 #include "lru/lruq.h"
-
+#include "arena/meta.h"
+#include "operations/operations.h"
 #include "transactions/queue.h"
 
-arena_t   * arena;
-disk_t    * disk;
-lru_queue_t * lru;
-hashmap_t hashmap;
-queue_t * trans_queue;
+arena_t      *arena;
+disk_t       *disk;
+lru_queue_t  *lru;
+wal_logger_t *wal_logger;
+hashmap_t     hashmap;
+queue_t      *trans_queue;
 
-extern void operation_peek(req_t * req, hashmap_t hashmap);
-extern void operation_select(req_t * req, hashmap_t hashmap);
-extern void operation_delete(req_t * req, hashmap_t hashmap);
-extern void operation_insert(req_t * req, hashmap_t hashmap);
-extern void operation_update(req_t * req, hashmap_t hashmap);
-
+void shutdown_handler(int signum);
 
 void on_request (req_t *req) {
 	req->log->info(req->log, "Starting processing request");
@@ -78,12 +75,7 @@ void on_request (req_t *req) {
 	}
 }
 
-static void idle_cb(EV_P_ ev_periodic *w, int revents) {
-	// fprintf(stderr, "Not blocked\n");
-}
-
 void * transaction_queue_worker (void * args) {
-
 	pthread_detach(pthread_self());
 	ignore_sigpipe();
 
@@ -92,65 +84,132 @@ void * transaction_queue_worker (void * args) {
 	while (1) {
 
 		transaction_t * trans = pop_queue(trans_queue, 0);
+		req_t* req = trans->ancestor;
 		if (!trans) {
 			continue;
 		}
 
+		proto_reply_t* db_reply;
+
 		switch(trans->msg->cmd) {
 			case PEEK:
 			{
-				operation_peek(trans->ancestor, hashmap);
+				db_reply = operation_peek(trans, hashmap);
 				break;
 			}
 			case SELECT:
 			{
-				operation_select(trans->ancestor, hashmap);
+				db_reply = operation_select(trans, hashmap);
 				break;
 			}
 			case INSERT:
 			{
-				operation_insert(trans->ancestor, hashmap);
+				db_reply = operation_insert(trans, hashmap);
 				break;
 			}
 			case DELETE:
 			{
-				operation_delete(trans->ancestor, hashmap);
+				db_reply = operation_delete(trans, hashmap);
 				break;
 			}
 			case UPDATE:
 			{
-				operation_update(trans->ancestor, hashmap);
+				db_reply = operation_update(trans, hashmap);
 				break;
 			}
 			default:
 			{
 				fprintf(stderr, "Unknown operation %d\n", trans->msg->cmd);
+				db_reply = malloc(sizeof(proto_reply_t));
+				db_reply->code = REPLY_ERROR;
+				db_reply->err  = OPERATION_UNKNOWN;
 				break;
 			}
 		}
+		request_reply(trans->ancestor, db_reply);
+		free(db_reply);
 	}
-
 }
 
 int db_start(int argc, char const *argv[]) {
 	buddy_new(8192);
 	lru = new_lru_queue();
 	arena = new_arena(1024);
-	disk = init_disk("db.snap");
-	arena->headers = init_headers(1024);
+
+	config_t config;
+	sprintf(config.disk.snap_dir, ".");
+	sprintf(config.disk.key_file, "key.key");
+	sprintf(config.wal.wal_dir, "wal");
+
+	config.arena.size = 1024;
+
+	disk = init_disk(&config);
+	arena->headers = init_headers(disk->pages);
 	hashmap = hashmap_new();
+
+	size_t keys = 0;
+
+	fprintf(stderr, "Starting with %d\n", disk->nkeys);
+
+	for (page_id_t page_id = 0; page_id < disk->pages; page_id++) {
+		page_header_t * header = new_header();
+		header->state      = PAGE_CLEAN;
+		header->location   = PAGE_INDISK;
+		header->page_id    = page_id;
+		header->pLSN       = disk->lsn;
+
+		int keys_count;
+		if (-1 == (keys_count = disk_upload_header(disk, header))) {
+			destroy_header(header);
+			break;
+		}
+
+		header->keys = malloc(sizeof(struct vector));
+		vector_init(header->keys, keys_count);
+		vector_add(arena->headers, header);
+
+		for (int i = 0; i < keys_count; i++) {
+			hashmap_key_t key;
+			if (-1 == disk_upload_key(disk, &key)) {
+				fprintf(stderr, "Unexpected EOF\n");
+				break;
+			}
+
+			keys++;
+
+			key_meta_t * meta = (key_meta_t *) malloc(sizeof(key_meta_t));
+			meta->page = page_id;
+			headers_push_key(header, meta, key.offset);
+			meta->weak_key = key.key;
+
+			hashmap_error_t err;
+			if (-1 == hashmap_insert_key(hashmap, meta, key.key, &err)) {
+				fprintf(stderr, "Failed on inserting key: %s. (%s)\n", key.key->ptr, hashmap_error[err]);
+				exit(EXIT_FAILURE);
+			} else {
+				// fprintf(stderr, "Successfully inserted %s\n", key.key->ptr);
+			}
+		}
+	}
+
+	assert(keys >= disk->nkeys);
+
+	// TODO: add some logic to start logger with actual LSNs
+	wal_logger = new_wal_logger(0, 0, 1);
+}
+
+static void async_cb (EV_P_ ev_async *w, int revents) {
+	// just used for the side effects
 }
 
 int start_server() {
 	struct ev_loop *loop = ev_default_loop(0);
 
-	struct ev_periodic every_few_seconds;
-	ev_periodic_init(&every_few_seconds, idle_cb, 0, 0.01, 0);
-	ev_periodic_start(EV_A_ &every_few_seconds);
-
 	ev_server server = server_init("0.0.0.0", 2016, INET);
 	server.on_request = on_request;
 	server_listen(loop, &server);
+	ev_async_init(&server.trigger, async_cb);
+	ev_async_start(loop, &server.trigger);
 	ev_loop(loop, 0);
 
 	// This point is only ever reached if the loop is manually exited
@@ -158,8 +217,46 @@ int start_server() {
 	return EXIT_SUCCESS;
 }
 
+void shutdown_handler(int signum) {
+	// TODO: gracefull
+	destroy_headers();
+	destroy_arena(arena);
+	hashmap_delete(hashmap);
+	buddy_destroy();
+	destroy_lru_queue(lru);
+	destroy_disk(disk);
+
+	exit(EXIT_SUCCESS);
+}
+
+void snapshot_handler(int signum) {
+	fprintf(stderr, "Snapshot creating...\n");
+	snapshot();
+	fprintf(stderr, "Snapshot done\n");
+}
+
 int main(int argc, char const *argv[]) {
 	db_start(argc, argv);
+
+	struct sigaction sa;
+	sa.sa_handler = shutdown_handler;
+	sa.sa_flags = 0;
+
+	sigaction(SIGTERM, &sa, 0);
+	sigaction(SIGINT, &sa, 0);
+
+	struct sigaction sa_snap;
+	sa_snap.sa_handler = snapshot_handler;
+	sa_snap.sa_flags = 0;
+
+	sigaction(SIGUSR1, &sa_snap, 0);
+
+	sigset_t sigset;
+	sigfillset(&sigset);
+	sigdelset(&sigset, SIGTERM);
+	sigdelset(&sigset, SIGINT);
+	sigdelset(&sigset, SIGUSR1);
+	sigprocmask(SIG_BLOCK, &sigset, NULL);
 
 	if (NULL == (trans_queue = init_queue())) {
 		fprintf(stderr, "Queue not allocated errno=%s\n", strerror(errno));

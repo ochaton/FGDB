@@ -49,20 +49,22 @@ void arena_page_touch(arena_page_id_t page_id) {
 
 void arena_defragmentate_page(arena_page_id_t page_id, page_header_t * header) {
 	arena_page_t * page = &arena->pages[page_id];
+	char * start = (char *) page;
+
 	header->state = PAGE_PROCESSING;
 	off_t offset = 0;
 	for (size_t block_id = 0; block_id < header->keys->total; block_id++) {
 		page_header_key_t * key = VECTOR_GET(header->keys[0], page_header_key_t *, block_id);
-		str_t * value = (str_t *) &page[key->offset];
-		memmove(&page[offset], &page[key->offset], value->size);
+		val_t * value = (val_t *) (start + key->offset);
+		memmove(start + offset, start + key->offset, value->size + sizeof(value->size));
 
 		key->offset = offset;
-		offset += value->size;
+		offset += value->size + sizeof(value->size);
 	}
 
 	header->fragmentated_bytes = 0;
-	header->tail_bytes = offset;
+	header->offset_bytes = offset;
 
-	memset((char *) page + header->tail_bytes, 0, PAGE_SIZE - header->tail_bytes);
+	memset(start + offset, 0, PAGE_SIZE - header->offset_bytes);
 	header->state = PAGE_DIRTY;
 }
