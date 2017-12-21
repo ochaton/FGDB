@@ -39,6 +39,8 @@ wal_logger_t *wal_logger;
 hashmap_t     hashmap;
 queue_t      *trans_queue;
 
+void shutdown_handler(int signum);
+
 void on_request (req_t *req) {
 	req->log->info(req->log, "Starting processing request");
 	req->log->info(req->log, "Cmd `%s` { key = `%s` }", message_cmd_str[req->msg->cmd], req->msg->key.ptr);
@@ -146,40 +148,47 @@ int db_start(int argc, char const *argv[]) {
 	arena->headers = init_headers(disk->pages);
 	hashmap = hashmap_new();
 
+	size_t keys = 0;
+
 	for (page_id_t page_id = 0; page_id < disk->pages; page_id++) {
-		page_header_t * header = headers_new_page();
+		page_header_t * header = new_header();
 		header->state      = PAGE_CLEAN;
 		header->location   = PAGE_INDISK;
 		header->tail_bytes = PAGE_SIZE;
 		header->page_id    = page_id;
 		header->pLSN       = disk->lsn;
 
-		header->keys = malloc(sizeof(struct vector));
-		vector_init(header->keys, PAGE_HEADER_KEYS_INIT_COUNT);
-
-		vector_add(arena->headers, header);
-	}
-
-	uint64_t keys;
-	for (keys = 0; keys < disk->nkeys; ++keys) {
-		hashmap_key_t disk_key;
-		if (-1 == disk_upload_key(disk, &disk_key)) {
+		int keys_count;
+		if (-1 == (keys_count = disk_upload_header(disk, header))) {
+			destroy_header(header);
 			break;
 		}
 
-		page_header_t * header = VECTOR_GET(arena->headers[0], page_header_t*, disk_key.page_id);
+		header->keys = malloc(sizeof(struct vector));
+		vector_init(header->keys, keys_count);
+		vector_add(arena->headers, header);
 
-		key_meta_t * meta = (key_meta_t *) malloc(sizeof(key_meta_t));
-		headers_push_key(header, meta, disk_key.offset);
-		header->location = PAGE_INDISK;
-		meta->weak_key = disk_key.key;
+		for (int i = 0; i < keys_count; i++) {
+			hashmap_key_t key;
+			if (-1 == disk_upload_key(disk, &key)) {
+				fprintf(stderr, "Unexpected EOF\n");
+				break;
+			}
 
-		hashmap_error_t err;
-		if (-1 == hashmap_insert_key(hashmap, meta, disk_key.key, &err)) {
-			fprintf(stderr, "Failed on inserting key: %s. (%s)\n", disk_key.key->ptr, hashmap_error[err]);
-			exit(EXIT_FAILURE);
-		} else {
-			fprintf(stderr, "Successfully inserted %s\n", disk_key.key->ptr);
+			keys++;
+
+			key_meta_t * meta = (key_meta_t *) malloc(sizeof(key_meta_t));
+			meta->page = page_id;
+			headers_push_key(header, meta, key.offset);
+			meta->weak_key = key.key;
+
+			hashmap_error_t err;
+			if (-1 == hashmap_insert_key(hashmap, meta, key.key, &err)) {
+				fprintf(stderr, "Failed on inserting key: %s. (%s)\n", key.key->ptr, hashmap_error[err]);
+				exit(EXIT_FAILURE);
+			} else {
+				fprintf(stderr, "Successfully inserted %s\n", key.key->ptr);
+			}
 		}
 	}
 

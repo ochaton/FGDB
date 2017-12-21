@@ -72,6 +72,10 @@ void arena_defragmentate_page(arena_page_id_t page_id, page_header_t * header);
 page_headers_vector_t * init_headers(size_t pages);
 void destroy_headers(void);
 void update_lsn(page_header_t* header, lsn_t LSN);
+
+page_header_t * new_header(void);
+void destroy_header(page_header_t * header);
+
 page_header_t * headers_new_page(void);
 page_header_t * headers_alloc_page(size_t value_size);
 page_header_t * page_value_set(str_t * value, key_meta_t * key);

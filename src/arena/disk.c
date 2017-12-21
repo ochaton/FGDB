@@ -77,7 +77,7 @@ void disk_upload_page(disk_t *disk, page_id_t disk_page_idx, arena_page_id_t are
 
 	int bytes, to_read = PAGE_SIZE, readed = 0;
 	while (to_read) {
-		bytes = read(disk->vfd, &arena->pages[arena_idx] + readed, to_read);
+		bytes = read(disk->vfd, (char *) &arena->pages[arena_idx] + readed, to_read);
 		if (-1 == bytes) {
 			if (errno == EAGAIN || errno == EINTR) {
 			} else {
@@ -128,8 +128,15 @@ void disk_dump_page(page_id_t page_idx, arena_page_id_t arena_idx) {
 
 int disk_dump_keys(disk_t * disk) {
 
+	lseek(disk->kfd, disk->keys_start, SEEK_SET);
+
 	for (page_id_t page_id = 0; page_id < arena->headers->total; page_id++) {
 		page_header_t * header = VECTOR_GET(arena->headers[0], page_header_t*, page_id);
+
+		uint16_t keys_total = (uint16_t) header->keys->total;
+
+		write(disk->kfd, &header->tail_bytes, sizeof(header->tail_bytes));
+		write(disk->kfd, &keys_total, sizeof(keys_total));
 
 		for (size_t key_id = 0; key_id < header->keys->total; key_id++) {
 			page_header_key_t * page_key = VECTOR_GET(header->keys[0], page_header_key_t*, key_id);
@@ -156,6 +163,17 @@ int disk_dump_keys(disk_t * disk) {
 			disk->keys_dumped++;
 		}
 	}
+}
+
+int disk_upload_header(disk_t * disk, page_header_t * header) {
+	uint16_t keys_total;
+	if (!read(disk->kfd, &header->tail_bytes, sizeof(header->tail_bytes))) {
+		return -1;
+	}
+
+	read(disk->kfd, &keys_total, sizeof(keys_total));
+
+	return keys_total;
 }
 
 int disk_upload_key(disk_t * disk, hashmap_key_t * ret) {

@@ -24,6 +24,7 @@ typedef struct disk {
 
 #include "common.h"
 #include "memory/hashmap.h"
+#include "arena/meta.h"
 #include "lib/hashmap/AVLNode.h"
 #include "config.h"
 
@@ -33,6 +34,8 @@ void disk_upload_page(disk_t *disk, page_id_t disk_page_idx, arena_page_id_t are
 void disk_dump_page(page_id_t page_idx, arena_page_id_t arena_idx);
 void disk_new_page(disk_t * disk);
 int disk_dump_keys(disk_t * disk);
+
+int disk_upload_header(disk_t * disk, page_header_t * header);
 int disk_upload_key(disk_t * disk, hashmap_key_t * key);
 
 

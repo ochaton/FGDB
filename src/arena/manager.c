@@ -70,12 +70,13 @@ void update_lsn(page_header_t * header, lsn_t LSN) {
 	return;
 }
 
+page_header_t * new_header(void) {
+	page_header_t * header = (page_header_t *) calloc(1, sizeof(page_header_t));
+	return header;
+}
+
 page_header_t * headers_new_page(void) {
-	page_header_t * header = (page_header_t *) malloc(sizeof(page_header_t));
-	if (!header) {
-		return NULL;
-	}
-	bzero(header, sizeof(*header));
+	page_header_t * header = new_header();
 
 	header->tail_bytes = PAGE_SIZE;
 	header->location   = PAGE_INMEMORY;
@@ -136,7 +137,7 @@ page_header_t * page_value_set(str_t * value, key_meta_t * key) {
 
 	size_t start_from = PAGE_SIZE - header->tail_bytes;
 	page_header_key_t * arena_header_key = headers_push_key(header, key, start_from);
-	key->page   = header->arena_id;
+	key->page   = header->page_id;
 
 	char * ptr = (char *) page + start_from;
 	*(typeof(value->size) *) ptr = value->size;
